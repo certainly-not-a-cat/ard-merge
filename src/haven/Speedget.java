@@ -57,7 +57,7 @@ public class Speedget extends Widget {
         public Widget create(UI ui, Object[] args) {
             int cur = (Integer) args[0];
             int max = (Integer) args[1];
-            return (new Speedget(cur, max));
+            return (new Speedget(cur,max));
         }
     }
 
@@ -122,7 +122,7 @@ public class Speedget extends Widget {
         return (null);
     }
 
-    public boolean globtype(char key, KeyEvent ev) {
+    /*public boolean globtype(char key, KeyEvent ev) {
         if (key == 18) {
             if (max >= 0) {
                 int n;
@@ -157,5 +157,7 @@ public class Speedget extends Widget {
             }
         }
         return (super.globtype(key, ev));
-    }
+    }*/
+
+
 }

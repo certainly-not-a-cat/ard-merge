@@ -31,9 +31,11 @@ import java.awt.image.BufferedImage;
 
 public class IButton extends SIWidget {
     BufferedImage up, down, hover;
+    private Runnable action = null;
     boolean h = false;
     boolean a = false;
     UI.Grab d = null;
+    public boolean recthit = false;
 
     @RName("ibtn")
     public static class $_ implements Factory {
@@ -42,21 +44,40 @@ public class IButton extends SIWidget {
         }
     }
 
+    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover, final Runnable action) {
+	super(Utils.imgsz(up));
+	this.up = up;
+	this.down = down;
+	this.hover = hover;
+	this.action = action;
+    }
     public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
         super(Utils.imgsz(up));
         this.up = up;
         this.down = down;
         this.hover = hover;
+	this.action = () -> wdgmsg("activate");
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
         this(up, down, up);
     }
 
+    public IButton(String base, String up, String down, String hover, final Runnable action) {
+	this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)), action);
+    }
     public IButton(String base, String up, String down, String hover) {
         this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null ? up : hover)));
     }
 
+    public IButton(final String res,  final Runnable action) {
+	this(Resource.loadimg(res, 0), Resource.loadimg(res, 1), Resource.loadimg(res, 2), action);
+    }
+
+    public IButton(final String res, final String tooltip, final Runnable action) {
+	this(Resource.loadimg(res, 0), Resource.loadimg(res, 1), Resource.loadimg(res, 2), action);
+    	this.tooltip = tooltip;
+    }
     public void draw(BufferedImage buf) {
         Graphics g = buf.getGraphics();
         if(a)
@@ -71,13 +92,17 @@ public class IButton extends SIWidget {
     public boolean checkhit(Coord c) {
         if (!c.isect(Coord.z, sz))
             return (false);
+        if(recthit)return true;
         if (up.getRaster().getNumBands() < 4)
             return (true);
         return (up.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
 
+    private void activate() {
+        action.run();
+    }
     public void click() {
-        wdgmsg("activate");
+        action.run();
     }
 
     protected void depress() {

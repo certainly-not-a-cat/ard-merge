@@ -101,7 +101,7 @@ public class StatusWdg extends Widget {
 
                         if (Thread.interrupted())
                             return;
-                    }
+                        }
                 } catch (SocketException se) {
                     // don't print socket exceptions when network is unreachable to prevent console spamming on bad connections
                     if (!se.getMessage().equals("Network is unreachable"))

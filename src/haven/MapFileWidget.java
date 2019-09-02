@@ -26,24 +26,39 @@
 
 package haven;
 
-import haven.MapFile.*;
+import static haven.MCache.cmaps;
 
-import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
 
-import static haven.MCache.cmaps;
+import javax.imageio.ImageIO;
+
+import haven.MapFile.Grid;
+import haven.MapFile.GridInfo;
+import haven.MapFile.Marker;
+import haven.MapFile.PMarker;
+import haven.MapFile.SMarker;
+import haven.MapFile.Segment;
+import haven.purus.pbot.PBotAPI;
+import haven.purus.pbot.PBotUtils;
 
 public class MapFileWidget extends Widget {
     public final MapFile file;
     public Location curloc;
     private Locator setloc;
-    private boolean follow;
+    public boolean follow;
     private Area dext;
     private Segment dseg;
     private DisplayGrid[] display;
@@ -190,6 +205,11 @@ public class MapFileWidget extends Widget {
                 g.image(flagfg, ul);
                 g.chcolor();
                 g.image(flagbg, ul);
+                if (Config.mapdrawflags) {
+                   Tex tex = Text.renderstroked(m.nm, Color.white, Color.BLACK, Text.num12boldFnd).tex();
+                   if(tex!=null)
+                     g.image(tex, ul.add(flagfg.sz.x / 2, -20).sub(tex.sz().x / 2, 0));
+                }
             } else if(m instanceof SMarker) {
                 SMarker sm = (SMarker)m;
                 try {
@@ -205,8 +225,16 @@ public class MapFileWidget extends Widget {
                 } catch(Exception e) {
                     cc = Coord.z;
                 }
-                if(img != null)
+                if(img != null) {
+                    //((SMarker)m).res.name.startsWith("gfx/invobjs/small"));
+                    if (Config.mapdrawquests) {
+                    if (sm.res != null && sm.res.name.startsWith("gfx/invobjs/small")) {
+                        Tex tex = Text.renderstroked(sm.nm, Color.white, Color.BLACK, Text.num12boldFnd).tex();
+                        g.image(tex, c.sub(cc).add(img.sz.x / 2, -20).sub(tex.sz().x / 2, 0));
+                    }
+                    }
                     g.image(img, c.sub(cc));
+                }
             }
         }
     }
@@ -389,27 +417,51 @@ public class MapFileWidget extends Widget {
 
     public boolean mousedown(Coord c, int button) {
         Coord tc = null;
-        if(curloc != null)
+        if (curloc != null)
             tc = c.sub(sz.div(2)).add(curloc.tc);
-        if(tc != null) {
+        if (tc != null) {
             DisplayMarker mark = markerat(tc);
-            if((mark != null) && clickmarker(mark, button))
-                return(true);
-            if(clickloc(new Location(curloc.seg, tc.mul(scalef())), button))
-                return(true);
-        }
-        if(button == 1) {
-            Location loc = curloc;
-            if((drag == null) && (loc != null)) {
-                drag = ui.grabmouse(this);
-                dsc = c;
-                dmc = loc.tc;
-                dragging = false;
+            if ((mark != null) && clickmarker(mark, button))
+                return (true);
+            if (clickloc(new Location(curloc.seg, tc.mul(scalef())), button))
+                return (true);
+            if (button == 1 && (ui.modctrl || ui.modmeta)) {
+                //Only works if we're on the same map segment as our player
+                try {
+                 //   tc = c.sub(sz.div(2)).add(curloc.tc);
+                    final Location pl = resolve(new MapLocator(ui.gui.map));
+                    if (curloc != null && curloc.seg == pl.seg) {
+                        final Coord2d plc = new Coord2d(ui.sess.glob.oc.getgob(ui.gui.map.plgob).getc());
+                        //Offset in terms of loftar map coordinates
+                        //XXX: Previous worlds had randomized north/south/east/west directions, still the case? Assuming not for now.
+                        final Coord2d offset = new Coord2d(pl.tc.sub(tc));
+                        //Translate this to real map units and add to current map position
+                        final Coord2d mc = plc.sub(offset.mul(MCache.tilesz).mul(scalef()));
+                        if (ui.modmeta) {
+                            ui.gui.map.queuemove(mc);
+                        } else {
+                            ui.gui.map.moveto(mc);
+                        }
+                    }
+                } catch (Exception e) {
+                    PBotUtils.sysLogAppend("Failed to resolve player location with map move", "white");
+                }
+                return true;
             }
-            return(true);
+	}
+	if(button == 1 && ui.modflags() == 0) {
+                Location loc = curloc;
+                if ((drag == null) && (loc != null)) {
+                    drag = ui.grabmouse(this);
+                    dsc = c;
+                    dmc = loc.tc;
+                    dragging = false;
+                }
+                return (true);
+
         }
-        return(super.mousedown(c, button));
-    }
+            return (super.mousedown(c, button));
+        }
 
     public void mousemove(Coord c) {
         if(drag != null) {
@@ -430,6 +482,29 @@ public class MapFileWidget extends Widget {
             drag = null;
         }
         return(super.mouseup(c, button));
+    }
+
+    public boolean mousewheel(Coord c, int amount) {
+        if(amount > 0) {
+            if (MapFileWidget.zoom < 4) {
+                PBotAPI.gui.mapfile.zoomtex = null;
+                Coord tc = curloc.tc.mul(MapFileWidget.scalef());
+                MapFileWidget.zoom++;
+                tc = tc.div(MapFileWidget.scalef());
+                curloc.tc.x = tc.x;
+                curloc.tc.y = tc.y;
+            }
+        } else {
+            if (MapFileWidget.zoom > 0) {
+                PBotAPI.gui.mapfile.zoomtex = null;
+                Coord tc = curloc.tc.mul(MapFileWidget.scalef());
+                MapFileWidget.zoom--;
+                tc = tc.div(MapFileWidget.scalef());
+                curloc.tc.x = tc.x;
+                curloc.tc.y = tc.y;
+            }
+        }
+        return(true);
     }
 
     public Object tooltip(Coord c, Widget prev) {

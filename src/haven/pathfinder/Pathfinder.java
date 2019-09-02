@@ -141,10 +141,13 @@ public class Pathfinder implements Runnable {
             if (action != null && !it.hasNext())
                 mv.gameui().act(action);
 
-            if (gob != null && !it.hasNext())
+            if (gob != null && !it.hasNext()) {
                 mv.wdgmsg("click", gob.sc, mc, clickb, modflags, 0, (int) gob.id, gob.rc.floor(posres), 0, meshid);
-            else
+                MapView.pllastcc = new Coord2d(src.x + e.dest.x - Map.origin, src.y + e.dest.y - Map.origin);
+            } else {
                 mv.wdgmsg("click", Coord.z, mc, 1, 0);
+                MapView.pllastcc = new Coord2d(src.x + e.dest.x - Map.origin, src.y + e.dest.y - Map.origin);
+            }
 
             // wait for gob to start moving
             long moveWaitStart = System.currentTimeMillis();

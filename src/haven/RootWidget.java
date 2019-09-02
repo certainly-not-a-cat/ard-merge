@@ -33,6 +33,8 @@ public class RootWidget extends ConsoleHost {
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     Profile guprof, grprof, ggprof;
     boolean afk = false;
+    private char last_gk;
+    private long last_gk_time;
 
     public RootWidget(UI ui, Coord sz) {
         super(ui, new Coord(0, 0), sz);
@@ -56,12 +58,17 @@ public class RootWidget extends ConsoleHost {
                 }
             } else if (key == ':') {
                 entercmd();
-            } else if (key != 0) {
-                wdgmsg("gk", (int) key);
+	    } else if(key != 0 && (last_gk != key || (System.currentTimeMillis() - last_gk_time) >= 500)) {
+		wdgmsg("gk", (int)key);
+		last_gk = key;
+		last_gk_time = System.currentTimeMillis();
             }
         }
-        return (true);
+	return(true);
     }
+
+   @Override
+    public boolean mousedown(Coord c, int button) { return super.mousedown(c, button); }
 
     public void draw(GOut g) {
         super.draw(g);

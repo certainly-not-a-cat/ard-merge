@@ -26,8 +26,10 @@
 
 package haven;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class CachedFunction<P, R> implements Function<P, R> {
     public final Function<P, R> back;

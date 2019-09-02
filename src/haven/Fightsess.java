@@ -26,10 +26,17 @@
 
 package haven;
 
+
+import haven.purus.pbot.PBotAPI;
+import haven.purus.pbot.PBotUtils;
+
 import java.awt.*;
-import java.util.*;
-import java.awt.event.KeyEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Fightsess extends Widget {
     public static final Tex cdframe = Resource.loadtex("gfx/hud/combat/cool");
@@ -42,10 +49,13 @@ public class Fightsess extends Widget {
     public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
     public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
     public static final int actpitch = 50;
+    public static int blue = 0, red = 0, myblue = 0, myred = 0, oldblue = 0, oldred = 0, unarmedcombat;
+    public static Double delta, expected, lastactopened;
     public final Action[] actions;
     public int use = -1, useb = -1;
-    public Coord pcc;
+    public Coord pcc,pcc2;
     public int pho;
+    private double lastuse, now = 0;
     private Fightview fv;
     private final Tex[] keystex = new Tex[10];
     private final Tex[] keysftex = new Tex[10];
@@ -58,6 +68,7 @@ public class Fightsess extends Widget {
         put("paginae/atk/reeling", new Color(203, 168, 6));
     }};
     private Coord simpleOpeningSz = new Coord(32, 32);
+    private Coord smallerOpeningSz = new Coord(24, 24);
 
     public static class Action {
         public final Indir<Resource> res;
@@ -72,6 +83,8 @@ public class Fightsess extends Widget {
     public static class $_ implements Factory {
         public Widget create(UI ui, Object[] args) {
             int nact = (Integer)args[0];
+            if(!Config.attackedsfx.equals("None"))
+                Audio.play(Resource.local().loadwait(Config.attackedsfx), Config.attackedvol);
             return(new Fightsess(nact));
         }
     }
@@ -133,7 +146,11 @@ public class Fightsess extends Widget {
         curfx.clear();
     }
 
+
+
     private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
+    private static final Text.Furnace ipf2 = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(255, 0, 0)).aa(true), 1, 1, new Color(48, 48, 96));
+    //private static final Text.Furnace ipf3 = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
     private final Text.UText<?> ip = new Text.UText<Integer>(ipf) {
         public String text(Integer v) {
             return (Config.altfightui ? v.toString() : "IP: " + v);
@@ -142,6 +159,7 @@ public class Fightsess extends Widget {
         public Integer value() {
             return (fv.current.ip);
         }
+
     };
     private final Text.UText<?> oip = new Text.UText<Integer>(ipf) {
         public String text(Integer v) {
@@ -169,13 +187,21 @@ public class Fightsess extends Widget {
     private Indir<Resource> lastact1 = null, lastact2 = null;
     private Text lastacttip1 = null, lastacttip2 = null;
 
+
     public void draw(GOut g) {
         updatepos();
+        try {
+            if (parent.lchild != this) {
+                raise();
+                if(Config.forcefightfocusharsh)
+                    parent.setfocus(this);
+                else if(!PBotAPI.gui.chat.hasfocus && Config.forcefightfocus)
+                    parent.setfocus(this);
+            }
+        }catch(Exception e){}
         double now = Utils.rtime();
-
         GameUI gui = gameui();
         int gcx = gui.sz.x / 2;
-
         for (Buff buff : fv.buffs.children(Buff.class)) {
             Coord bc = Config.altfightui ? new Coord(gcx - buff.c.x - Buff.cframe.sz().x - 80, 180) : pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
             drawOpening(g, buff, bc);
@@ -190,8 +216,53 @@ public class Fightsess extends Widget {
             g.aimage(ip.get().tex(), Config.altfightui ? new Coord(gcx - 45, 200) : pcc.add(-75, 0), 1, 0.5);
             g.aimage(oip.get().tex(), Config.altfightui ? new Coord(gcx + 45, 200) : pcc.add(75, 0), 0, 0.5);
 
-            if (fv.lsrel.size() > 1)
+            if (fv.lsrel.size() > 1) {
                 fxon(fv.current.gobid, tgtfx);
+                if(Config.showothercombatinfo) {
+                    for (int i = 0; i < fv.lsrel.size(); i++) {
+                        if (fv.current != fv.lsrel.get(i)) {
+                            try {
+                                Coord buffcoord = null;
+                                for (Buff buff : fv.lsrel.get(i).buffs.children(Buff.class)) {
+                                 pcc2 = this.gameui().map.glob.oc.getgob(fv.lsrel.get(i).gobid).sc;
+                               //  Coord cc = pcc2.add(buff.c.x / 32 * 24, -100);
+                                 Coord cc = this.gameui().map.glob.oc.getgob(fv.lsrel.get(i).gobid).sc.add(new Coord(this.gameui().map.glob.oc.getgob(fv.lsrel.get(i).gobid).sczu.mul(15)));
+                                 Coord finalcc = new Coord(cc.x,cc.y-60);
+                                 if (buffcoord == null)
+                                     buffcoord = finalcc;
+                                 else
+                                     finalcc = buffcoord.add(buff.c.x / 32 * 24, 0);
+                                 drawOpeningofftarget(g, buff, finalcc, 24);
+                                }
+                                int itransfer = i;
+                                Text.UText<?> oip2 = new Text.UText<Integer>(ipf2) {
+                                    public String text(Integer v) {
+                                        return ("IP: " + v);
+                                    }
+
+                                    public Integer value() {
+                                        return (fv.lsrel.get(itransfer).oip);
+                                    }
+                                };
+                                Text.UText<?> ip2 = new Text.UText<Integer>(ipf) {
+                                    public String text(Integer v) {
+                                        return ("IP: " + v);
+                                    }
+
+                                    public Integer value() {
+                                        return (fv.lsrel.get(itransfer).ip);
+                                    }
+                                };
+                                Coord cc = this.gameui().map.glob.oc.getgob(fv.lsrel.get(i).gobid).sc.add(new Coord(this.gameui().map.glob.oc.getgob(fv.lsrel.get(i).gobid).sczu.mul(15)));
+                                Coord finalcc = new Coord(cc.x,cc.y-50);
+                                g.aimage(ip2.get().tex(), finalcc.add(-5, 0), 1, .5);
+                                g.aimage(oip2.get().tex(), finalcc.add(-5, 20), 1, .5);
+                            } catch (Exception idk) {
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         {
@@ -227,8 +298,7 @@ public class Fightsess extends Widget {
                     g.chcolor();
                 }
             }
-        } catch (Loading l) {
-        }
+        } catch (Loading l) { }
 
         if (fv.current != null) {
             try {
@@ -280,7 +350,7 @@ public class Fightsess extends Widget {
                     }
 
                     if (Config.combshowkeys) {
-                    	
+
                     	Tex key;
                     	if(Config.combatkeys == 0)
                     	{
@@ -340,6 +410,42 @@ public class Fightsess extends Widget {
         } else {
             buff.draw(g.reclip(bc, buff.sz));
         }
+    }
+
+    private void drawOpeningofftarget(GOut g, Buff buff, Coord bc, int size) {
+        try {
+            Coord smalSz = new Coord(size, size);
+            Coord metSz = new Coord(size, 3);
+            Resource res = buff.res.get();
+            Color clr = openings.get(res.name);
+            if (clr == null) {
+                buff.draw(g.reclip(bc, smalSz.add(0, 10)), size);
+                return;
+            }
+
+            if (buff.ameter >= 0) {
+                g.chcolor(Color.BLACK);
+                g.frect(bc.add(Buff.ameteroff), metSz);
+                g.chcolor(Color.WHITE);
+                g.frect(bc.add(Buff.ameteroff), new Coord(buff.ameter * metSz.x / 100, metSz.y));
+            }
+
+            bc.x += 3;
+            bc.y += 3;
+            g.chcolor(clr);
+            g.frect(bc, smalSz);
+            g.chcolor(Color.WHITE);
+            if (buff.atex == null) {
+                buff.atex = Text.renderstroked(buff.ameter + "", Color.WHITE, Color.BLACK, Text.num12boldFnd).tex();
+            }
+
+            Tex atex = buff.atex;
+            bc.x = bc.x + smalSz.x / 2 - atex.sz().x / 2;
+            bc.y = bc.y + smalSz.y / 2 - atex.sz().y / 2;
+            g.image(atex, bc);
+            g.chcolor();
+        } catch (Loading l) {}
+
     }
 
     private Widget prevtt = null;
@@ -440,85 +546,119 @@ public class Fightsess extends Widget {
         }
     }
 
-    public boolean globtype(char key, KeyEvent ev) {
-        if (ev.getKeyCode() == KeyEvent.VK_TAB && ev.isControlDown()) {
-            Fightview.Relation cur = fv.current;
-            if (cur != null) {
-                fv.lsrel.remove(cur);
-                fv.lsrel.addLast(cur);
-            }
-            fv.wdgmsg("bump", (int) fv.lsrel.get(0).gobid);
-            return (true);
-        }
 
+    private int last_button = -1;
+    private long last_sent = System.currentTimeMillis();
+
+    public boolean globtype(char key, KeyEvent ev) {
         int n = -1;
         if (Config.combatkeys == 0) {
             if ((key == 0) && (ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
 
-                switch(ev.getKeyCode()) {
-                    case KeyEvent.VK_1: n = 0; break;
-                    case KeyEvent.VK_2: n = 1; break;
-                    case KeyEvent.VK_3: n = 2; break;
-                    case KeyEvent.VK_4: n = 3; break;
-                    case KeyEvent.VK_5: n = 4; break;
+                switch (ev.getKeyCode()) {
+                    case KeyEvent.VK_1:
+                        n = 0;
+                        break;
+                    case KeyEvent.VK_2:
+                        n = 1;
+                        break;
+                    case KeyEvent.VK_3:
+                        n = 2;
+                        break;
+                    case KeyEvent.VK_4:
+                        n = 3;
+                        break;
+                    case KeyEvent.VK_5:
+                        n = 4;
+                        break;
                 }
-                if((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
+                if ((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
                     n += 5;
             }
-        } else if(Config.combatkeys == 1) { // F1-F5
+        } else if (Config.combatkeys == 1) { // F1-F5
             if (key == 0) {
 
-                switch(ev.getKeyCode()) {
-                    case KeyEvent.VK_1: n = 0; break;
-                    case KeyEvent.VK_2: n = 1; break;
-                    case KeyEvent.VK_3: n = 2; break;
-                    case KeyEvent.VK_4: n = 3; break;
-                    case KeyEvent.VK_5: n = 4; break;
-                    case KeyEvent.VK_F1: n = 5; break;
-                    case KeyEvent.VK_F2: n = 6; break;
-                    case KeyEvent.VK_F3: n = 7; break;
-                    case KeyEvent.VK_F4: n = 8; break;
-                    case KeyEvent.VK_F5: n = 9; break;
+                switch (ev.getKeyCode()) {
+                    case KeyEvent.VK_1:
+                        n = 0;
+                        break;
+                    case KeyEvent.VK_2:
+                        n = 1;
+                        break;
+                    case KeyEvent.VK_3:
+                        n = 2;
+                        break;
+                    case KeyEvent.VK_4:
+                        n = 3;
+                        break;
+                    case KeyEvent.VK_5:
+                        n = 4;
+                        break;
+                    case KeyEvent.VK_F1:
+                        n = 5;
+                        break;
+                    case KeyEvent.VK_F2:
+                        n = 6;
+                        break;
+                    case KeyEvent.VK_F3:
+                        n = 7;
+                        break;
+                    case KeyEvent.VK_F4:
+                        n = 8;
+                        break;
+                    case KeyEvent.VK_F5:
+                        n = 9;
+                        break;
                 }
             }
-        }
-        else { // F1-F10
-	        if (key == 0) {
-	
-	            switch(ev.getKeyCode()) {
-	                case KeyEvent.VK_F1: n = 0; break;
-	                case KeyEvent.VK_F2: n = 1; break;
-	                case KeyEvent.VK_F3: n = 2; break;
-	                case KeyEvent.VK_F4: n = 3; break;
-	                case KeyEvent.VK_F5: n = 4; break;
-	                case KeyEvent.VK_F6: n = 5; break;
-	                case KeyEvent.VK_F7: n = 6; break;
-	                case KeyEvent.VK_F8: n = 7; break;
-	                case KeyEvent.VK_F9: n = 8; break;
-	                case KeyEvent.VK_F10: n = 9; break;
-	            }
-        }
+        } else { // F1-F10
+            if (key == 0) {
+
+                switch (ev.getKeyCode()) {
+                    case KeyEvent.VK_F1:
+                        n = 0;
+                        break;
+                    case KeyEvent.VK_F2:
+                        n = 1;
+                        break;
+                    case KeyEvent.VK_F3:
+                        n = 2;
+                        break;
+                    case KeyEvent.VK_F4:
+                        n = 3;
+                        break;
+                    case KeyEvent.VK_F5:
+                        n = 4;
+                        break;
+                    case KeyEvent.VK_F6:
+                        n = 5;
+                        break;
+                    case KeyEvent.VK_F7:
+                        n = 6;
+                        break;
+                    case KeyEvent.VK_F8:
+                        n = 7;
+                        break;
+                    case KeyEvent.VK_F9:
+                        n = 8;
+                        break;
+                    case KeyEvent.VK_F10:
+                        n = 9;
+                        break;
+                }
+            }
         }
 
         int fn = n;
-        if ((n >= 0) && (n < actions.length)) {
-            MapView map = getparent(GameUI.class).map;
-            Coord mvc = map.rootxlate(ui.mc);
-            if (mvc.isect(Coord.z, map.sz)) {
-                map.delay(map.new Maptest(mvc) {
-                    protected void hit(Coord pc, Coord2d mc) {
-                        wdgmsg("use", fn, 1, ui.modflags(), mc.floor(OCache.posres));
-                    }
-
-                    protected void nohit(Coord pc) {
-                        wdgmsg("use", fn, 1, ui.modflags());
-                    }
-                });
-            }
+        if ((n >= 0) && (n < actions.length) && (last_button != fn || (System.currentTimeMillis() - last_sent) >= 150)) {
+            wdgmsg("use", fn, 1, ui.modflags());
+            last_button = fn;
+            last_sent = System.currentTimeMillis();
             return (true);
         }
-
-
+        else if((n >= 0) && (n < actions.length))
+        return (true);
+        else
         return(super.globtype(key, ev));
     }
 }

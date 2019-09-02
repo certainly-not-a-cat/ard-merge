@@ -33,7 +33,7 @@ public class Astronomy {
     public final boolean night;
     public final Color mc;
     public final int is;
-	
+
     public Astronomy(double dt, double mp, double yt, boolean night, Color mc, int is, double sp, double sd) {
 	this.dt = dt;
 	this.mp = mp;

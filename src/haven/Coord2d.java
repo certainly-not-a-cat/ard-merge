@@ -35,6 +35,7 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 	this.y = y;
     }
 
+    public Coord2d(Coord2d c) { this(c.x, c.y); }
     public Coord2d(Coord c) {
 	this(c.x, c.y);
     }
@@ -123,6 +124,9 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     public Coord floor() {
 	return(new Coord((int)Math.floor(x), (int)Math.floor(y)));
     }
+    public Coord2d floord() {
+    	return new Coord2d(Math.floor(x), Math.floor(y));
+	}
 
     public Coord floor(double X, double Y) {
 	return(new Coord((int)Math.floor(x / X), (int)Math.floor(y / Y)));
@@ -149,12 +153,19 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public double dist(Coord2d o) {
-	return(Math.hypot(x - o.x, y - o.y));
+        return(Math.hypot(x - o.x, y - o.y));
     }
 
     public double abs() {
 	return(Math.hypot(x, y));
     }
+
+	public Coord2d rotate(double angle) {
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		return new Coord2d(x * cos - y * sin,
+				y * cos + x * sin);
+	}
 
     public static Coord2d sc(double a, double r) {
 	return(new Coord2d(Math.cos(a) * r, Math.sin(a) * r));

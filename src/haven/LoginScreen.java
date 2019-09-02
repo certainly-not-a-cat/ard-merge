@@ -26,18 +26,32 @@
 
 package haven;
 
-import java.awt.*;
+import haven.purus.pbot.PBotAPI;
+import haven.purus.pbot.PBotUtils;
+
+import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.event.KeyEvent;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Scanner;
 
 public class LoginScreen extends Widget {
+	boolean serverStatus;
     Login cur;
     Text error;
     IButton btn;
+    Button statusbtn;
     Button optbtn;
+    private TextEntry user;
     OptWnd opts;
     static Text.Foundry textf, textfs, special;
     static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
+    private Window log;
 
     static {
         textf = new Text.Foundry(Text.sans, 16).aa(true);
@@ -50,11 +64,40 @@ public class LoginScreen extends Widget {
         setfocustab(true);
         add(new Img(bg), Coord.z);
         optbtn = adda(new Button(100, "Options"), sz.x-110, 40, 0, 1);
-        new UpdateChecker().start();
+       // new UpdateChecker().start();
         add(new LoginList(200, 29), new Coord(10, 10));
+        statusbtn = adda(new Button(200, "Initializing..."), sz.x-210, 80, 0, 1);
+        StartUpdaterThread();
         GameUI.swimon = false;
         GameUI.trackon = false;
         GameUI.crimeon = false;
+    }
+
+    private void showChangeLog() {
+        log = ui.root.add(new Window(new Coord(50, 50), "Changelog"), new Coord(100, 50));
+        log.justclose = true;
+        Textlog txt = log.add(new Textlog(new Coord(450, 500)));
+        txt.quote = false;
+        int maxlines = txt.maxLines = 200;
+        log.pack();
+        try {
+            InputStream in = LoginScreen.class.getResourceAsStream("/changelog.txt");
+            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            File f = Config.getFile("changelog.txt");
+            FileOutputStream out = new FileOutputStream(f);
+            String strLine;
+            int count = 0;
+            while((count < maxlines) && (strLine = br.readLine()) != null) {
+                txt.append(strLine);
+                out.write((strLine + Config.LINE_SEPARATOR).getBytes());
+                count++;
+            }
+            br.close();
+            out.close();
+            in.close();
+        } catch(IOException ignored) {
+        }
+        txt.setprog(0);
     }
 
     private static abstract class Login extends Widget {
@@ -64,7 +107,7 @@ public class LoginScreen extends Widget {
     }
 
     private class Pwbox extends Login {
-        TextEntry user, pass;
+        TextEntry  pass;
 
         private Pwbox(String username, boolean save) {
             setfocustab(true);
@@ -233,6 +276,7 @@ public class LoginScreen extends Widget {
                 } else if (c.x < sz.x - 35) {
                     parent.wdgmsg("forget");
                     parent.wdgmsg("login", new Object[]{new AuthClient.NativeCred(itm.name, itm.pass), false});
+                    Context.accname = itm.name;
                 }
                 super.itemclick(itm, button);
             }
@@ -284,8 +328,10 @@ public class LoginScreen extends Widget {
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
         if (sender == btn) {
-            if (cur.enter())
+            if (cur.enter()) {
+                Context.accname = user.text;
                 super.wdgmsg("login", cur.data());
+            }
             return;
         } else if (sender == optbtn) {
             if (opts == null) {
@@ -303,8 +349,17 @@ public class LoginScreen extends Widget {
         } else if (sender == opts) {
             opts.reqdestroy();
             opts = null;
-        }
-        super.wdgmsg(sender, msg, args);
+        } else if(sender == statusbtn) {
+        		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        		if(desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+        			try {
+                    desktop.browse(new URI("http://www.havenandhearth.com/portal/"));
+					} catch (IOException | URISyntaxException e) {
+						e.printStackTrace();
+					}
+        		}
+        } else
+        	super.wdgmsg(sender, msg, args);
     }
 
     public void cdestroy(Widget ch) {
@@ -340,6 +395,9 @@ public class LoginScreen extends Widget {
     protected void added() {
         presize();
         parent.setfocus(this);
+        if(Config.isUpdate){
+            showChangeLog();
+        }
     }
 
     public void draw(GOut g) {
@@ -352,10 +410,44 @@ public class LoginScreen extends Widget {
 
     public boolean type(char k, KeyEvent ev) {
         if (k == 10) {
-            if ((cur != null) && cur.enter())
+            if ((cur != null) && cur.enter()) {
+                Context.accname = user.text;
                 wdgmsg("login", cur.data());
+            }
             return (true);
         }
         return (super.type(k, ev));
     }
+    
+    private void StartUpdaterThread() {
+        Thread statusupdaterthread = new Thread(new Runnable() {
+            public void run() {
+				try {
+
+					URL url = new URL("http://www.havenandhearth.com/portal/index/status");
+	        		while(true) {
+						Scanner scan = new Scanner(url.openStream());
+						while(scan.hasNextLine()) {
+							String line = scan.nextLine();
+							if(line.contains("h2")) {
+								statusbtn.change(line.substring(line.indexOf("<h2>")+4, line.indexOf("</h2>")), Color.WHITE);
+		        				}
+	        				}
+                        GameUI gui = PBotAPI.gui;
+	        				if(gui != null) {
+                                if (gui.ui.sess.alive()) {
+                                   break;
+                                }
+                            }
+						Thread.sleep(5000);
+	        		}
+				} catch(IOException e) {
+					e.printStackTrace();
+				} catch(InterruptedException e) {
+					e.printStackTrace();
+				} 
+            }
+        });
+        statusupdaterthread.start();
+}
 }

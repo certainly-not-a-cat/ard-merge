@@ -26,11 +26,25 @@
 
 package haven;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
+import haven.purus.pbot.PBotAPI;
+
+import java.awt.Dimension;
+import java.awt.DisplayMode;
+import java.awt.GraphicsDevice;
+import java.awt.Image;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.Writer;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
@@ -38,7 +52,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     private final ThreadGroup g;
     public final Thread mt;
     DisplayMode fsmode = null, prefs = null;
-    private static final String TITLE = "Haven and Hearth (Amber v" + Config.version + ")";
+    private static final String TITLE = "Ardennes Hafen Client | Based On Amber Ender and Purus v" + Config.version + "";
 
     static {
         try {
@@ -212,7 +226,61 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
         p.init();
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                g.interrupt();
+                GameUI gui = PBotAPI.gui;
+                if(gui == null || gui.ui == null || gui.ui.sess == null || !gui.ui.sess.alive())
+                    g.interrupt();
+                if (Config.confirmclose) {
+                    Window confirmwnd = new Window(Coord.z, "Confirm","Confirm") {
+                        @Override
+                        public void wdgmsg(Widget sender, String msg, Object... args) {
+                            if (sender == cbtn)
+                                reqdestroy();
+                            else
+                                super.wdgmsg(sender, msg, args);
+                        }
+
+                        @Override
+                        public boolean type(char key, KeyEvent ev) {
+                            if (key == 27) {
+                                reqdestroy();
+                                return true;
+                            }
+                            return super.type(key, ev);
+                        }
+                    };
+                    Label confirmlabel = new Label(Resource.getLocString(Resource.BUNDLE_LABEL, "Exit game?"));
+
+                    confirmwnd.add(confirmlabel, new Coord(125,20));
+                    confirmwnd.pack();
+                    confirmlabel.c.x = confirmwnd.sz.x / 2 - 25;
+
+                    Button yesbtn = new Button(70, "Exit") {
+                        @Override
+                        public void click() {
+                            g.interrupt();
+                          //  parent.reqdestroy();
+                        }
+                    };
+                    confirmwnd.add(yesbtn, new Coord(confirmwnd.sz.x / 2 - 20 - yesbtn.sz.x, 60));
+                    Button nobtn = new Button(70, "Don't Exit") {
+                        @Override
+                        public void click() {
+                            parent.reqdestroy();
+                        }
+                    };
+                    confirmwnd.add(nobtn, new Coord(confirmwnd.sz.x / 2 + 20, 60));
+                    confirmwnd.pack();
+
+                    if(gui != null) {
+                        gui.add(confirmwnd, new Coord(gui.sz.x / 2 - confirmwnd.sz.x / 2, gui.sz.y / 2 - 200));
+                        confirmwnd.show();
+                    }else {
+                        g.interrupt();
+                    }
+                } else {
+                    g.interrupt();
+                }
+
             }
 
             public void windowActivated(WindowEvent e) {
@@ -334,6 +402,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
             return;
         }
         setupres();
+        DefSettings.init(); //init after res has been setup...
         MainFrame f = new MainFrame(null);
         if (Utils.getprefb("fullscreen", false))
             f.setfs();

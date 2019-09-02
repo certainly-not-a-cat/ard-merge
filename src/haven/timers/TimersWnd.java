@@ -1,21 +1,32 @@
 package haven.timers;
 
 
-import haven.*;
-import haven.Button;
-import haven.Window;
-
-import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import haven.Button;
+import haven.CheckBox;
+import haven.Config;
+import haven.Coord;
+import haven.GOut;
+import haven.GameUI;
+import haven.Glob;
+import haven.Scrollport;
+import haven.Utils;
+import haven.Widget;
+import haven.Window;
 
 public class TimersWnd extends Window {
     public final GameUI gui;
     public static final int WIDTH = 460;
     public final Scrollport port;
     private final static int MAX_ITEMS = 13;
+    private List<TimerWdg> timers = new ArrayList<TimerWdg>();
+    private int SortTimer = 0;
 
     public TimersWnd(final GameUI gui) {
-        super(Coord.z, "Timers");
+        super(Coord.z, "Timers", "Timers");
         this.gui = gui;
 
         Button btna = new Button(50, "Add") {
@@ -24,6 +35,33 @@ public class TimersWnd extends Window {
             }
         };
         add(btna, new Coord(20, 10));
+        Button btnb = new Button(50, "Delete All") {
+            public void click() {
+                while(Glob.timersThread.getall().size() >0){
+                    for (Widget l = port.cont.lchild; l != null; l = l.next) {
+                        if (l instanceof TimerWdg) {
+                            ((TimerWdg) l).delete();
+                        }
+                    }
+                }
+                gameui().timerswnd.resize();
+                Glob.timersThread.save();
+            }
+        };
+        add(btnb, new Coord(80, 10));
+
+        CheckBox chksort = new CheckBox("Auto sort (30sec)") {
+            {
+                a = Config.timersort;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("timersort", val);
+                Config.timersort = val;
+                a = val;
+            }
+        };
+        add(chksort, new Coord(220, 15));
 
         CheckBox chkalarm = new CheckBox("Sound Alarm") {
             {
@@ -38,7 +76,7 @@ public class TimersWnd extends Window {
         };
         add(chkalarm, new Coord(350, 15));
 
-        List<TimerWdg> timers = Glob.timersThread.getall();
+        timers = Glob.timersThread.getall();
         if (timers.size() == 0)
             Glob.timersThread.load();
         timers = Glob.timersThread.getall();
@@ -58,7 +96,30 @@ public class TimersWnd extends Window {
         for (int i = 0; i < timers.size(); i++)
             port.cont.add(timers.get(i), new Coord(0, i * TimerWdg.height));
 
+        pack();
         resize();
+    }
+
+    public void tick(double dt){
+        if(Config.timersort) {
+            SortTimer++;
+            if (SortTimer > 3000) {
+                SortTimer = 0;
+                Glob.timersThread.save();
+                timers = Glob.timersThread.getall();
+                for (int i = 0; i < timers.size(); i++) {
+                    for (Widget l = port.cont.lchild; l != null; l = l.next) {
+                        if (l instanceof TimerWdg) {
+                            l.reqdestroy();
+                        }
+                    }
+                }
+                sort(timers);
+                for (int i = 0; i < timers.size(); i++)
+                    port.cont.add(timers.get(i), new Coord(0, i * TimerWdg.height));
+                resize();
+            }
+        }
     }
 
     public void resize() {
@@ -70,6 +131,7 @@ public class TimersWnd extends Window {
         port.bar.changed();
         super.resize(WIDTH, portHeight + 60);
     }
+
 
     @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -87,5 +149,19 @@ public class TimersWnd extends Window {
             return true;
         }
         return super.type(key, ev);
+    }
+    public void sort (List <TimerWdg> items) {
+        Collections.sort(items, (a, b) -> {
+            Long aq = a.duration - a.elapsed;
+            Long bq = b.duration - b.elapsed;
+            if (aq == null || bq == null)
+                return 0;
+            else if (aq.doubleValue() == bq.doubleValue())
+                return 0;
+            else if (aq.doubleValue() > bq.doubleValue())
+                return 1;
+            else
+                return -1;
+        });
     }
 }

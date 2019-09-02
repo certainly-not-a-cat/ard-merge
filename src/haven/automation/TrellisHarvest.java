@@ -1,12 +1,19 @@
 package haven.automation;
 
 
-import haven.*;
+import static haven.OCache.posres;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static haven.OCache.posres;
+import haven.Coord2d;
+import haven.FastMesh;
+import haven.FlowerMenu;
+import haven.GameUI;
+import haven.Gob;
+import haven.Loading;
+import haven.ResDrawable;
+import haven.Resource;
 
 public class TrellisHarvest implements Runnable {
     private GameUI gui;
@@ -30,13 +37,15 @@ public class TrellisHarvest implements Runnable {
                     Resource res = gob.getres();
                     if (res != null && plants.contains(res.name)) {
                         if (gob.cropstgmaxval == 0) {
-                            for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
-                                int stg = layer.id / 10;
-                                if (stg > gob.cropstgmaxval)
-                                    gob.cropstgmaxval = stg;
+                            if (gob.cropstgmaxval == 0) {
+                                for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
+                                    int stg = layer.id / 10;
+                                    if (stg > gob.cropstgmaxval)
+                                        gob.cropstgmaxval = stg;
+                                }
                             }
                         }
-                        int stage = gob.getattr(ResDrawable.class).sdt.peekrbuf(0);
+                        int stage = gob.sdt();
                         if (stage == gob.cropstgmaxval) {
                             Coord2d plc = gui.map.player().rc;
                             if ((plant == null || gob.rc.dist(plc) < plant.rc.dist(plc)))

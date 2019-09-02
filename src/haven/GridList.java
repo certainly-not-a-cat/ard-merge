@@ -27,9 +27,11 @@
 package haven;
 
 import java.awt.Color;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static haven.PUtils.*;
+import haven.PUtils.BlurFurn;
+import haven.PUtils.TexFurn;
 
 public abstract class GridList<T> extends Widget {
     public static final Text.Furnace dcatf = new BlurFurn(new TexFurn(new Text.Foundry(Text.dfont, 18).aa(true), Window.ctex), 2, 1, new Color(96, 48, 0));

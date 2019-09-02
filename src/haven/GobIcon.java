@@ -26,7 +26,7 @@
 
 package haven;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -64,6 +64,7 @@ public class GobIcon extends GAttrib {
         }
         return (this.tex);
     }
+
 
     public Tex texgrey() {
         if (!greyscale) {

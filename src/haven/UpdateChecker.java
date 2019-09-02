@@ -1,12 +1,16 @@
 package haven;
 
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.Charset;
+
 import org.json.JSONObject;
 
 public class UpdateChecker extends Thread {
-    private static final String url = "https://api.github.com/repos/romovs/amber/releases/latest";
+    private static final String url = "https://api.github.com/repos/Ardenneslol/ArdClient/releases/latest";
 
     public UpdateChecker() {
         super("Update Checker");

@@ -1,16 +1,16 @@
+import java.awt.image.BufferedImage;
+import java.util.List;
+
 import haven.CharWnd;
 import haven.Coord;
 import haven.ItemInfo;
+import haven.ItemInfo.Tip;
 import haven.PUtils;
 import haven.Resource;
+import haven.Resource.Image;
 import haven.RichText;
 import haven.Text;
-import haven.ItemInfo.Tip;
-import haven.Resource.Image;
 import haven.Text.Line;
-
-import java.awt.image.BufferedImage;
-import java.util.List;
 
 public class Slotted extends Tip {
     public static final Line ch = Text.render(Resource.getLocString(Resource.BUNDLE_LABEL, "As gilding:"));

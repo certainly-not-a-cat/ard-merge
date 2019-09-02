@@ -26,11 +26,13 @@
 
 package haven;
 
-import java.util.*;
-import javax.media.opengl.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import haven.GLShader.VertexShader;
-import haven.GLShader.FragmentShader;
+import javax.media.opengl.GL2;
 
 public class GLProgram implements java.io.Serializable {
     public final Collection<GLShader> shaders;
@@ -132,10 +134,22 @@ public class GLProgram implements java.io.Serializable {
         }
 
         public int uniform(GL2 gl, String name) {
+            /*
+            int r = gl.glGetUniformLocationARB(id, name);
+            if (r < 0)
+                throw (new NoSuchElementException(name));
+            return (r);
+            */
             return(gl.glGetUniformLocationARB(id, name));
         }
 
         public int attrib(GL2 gl, String name) {
+            /*
+            int r = gl.glGetAttribLocation(id, name);
+            if (r < 0)
+                throw (new NoSuchElementException(name));
+            return (r);
+            */
             return(gl.glGetAttribLocation(id, name));
         }
     }
@@ -192,6 +206,10 @@ public class GLProgram implements java.io.Serializable {
             final ProgOb glob = glob(g);
             r = new VarID(name) {
                 public void run(GL2 gl) {
+                    /*
+                    if ((this.id = glob.uniform(gl, name)) < 0)
+                        throw (new UnknownExternException("Unknown uniform name: " + name, GLProgram.this, "uniform", name));
+                        */
                     this.id = glob.uniform(gl, name);
                 }
             };
@@ -209,6 +227,10 @@ public class GLProgram implements java.io.Serializable {
             final ProgOb glob = glob(g);
             r = new VarID(name) {
                 public void run(GL2 gl) {
+                    /*
+                    if ((this.id = glob.attrib(gl, name)) < 0)
+                        throw (new UnknownExternException("Unknown attribute name: " + name, GLProgram.this, "attrib", name));
+                        */
                     this.id = glob.attrib(gl, name);
                 }
             };

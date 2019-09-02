@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.purus.pbot.PBotUtils;
 import haven.res.ui.tt.q.qbuff.QBuff;
 
 import java.util.*;
@@ -35,8 +36,27 @@ public class Inventory extends Widget implements DTarget {
     public static final Coord sqsz = new Coord(33, 33);
     public boolean dropul = true;
     public Coord isz;
-    Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
+    public static final Comparator<WItem> ITEM_COMPARATOR_ASC = new Comparator<WItem>() {
+	@Override
+	public int compare(WItem o1, WItem o2) {
+	    QualityList ql1 = o1.itemq.get();
+	    double q1 = (ql1 != null && !ql1.isEmpty()) ? ql1.single(QualityList.SingleType.Average).value : 0;
 
+	    QualityList ql2 = o2.itemq.get();
+	    double q2 = (ql2 != null && !ql2.isEmpty()) ? ql2.single(QualityList.SingleType.Average).value : 0;
+
+	    return Double.compare(q1, q2);
+	}
+    };
+    public static final Comparator<WItem> ITEM_COMPARATOR_DESC = new Comparator<WItem>() {
+	@Override
+	public int compare(WItem o1, WItem o2) {
+	    return ITEM_COMPARATOR_ASC.compare(o2, o1);
+	}
+    };
+
+    public boolean locked = false;
+    Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
     @RName("inv")
     public static class $_ implements Factory {
         public Widget create(UI ui, Object[] args) {
@@ -70,6 +90,11 @@ public class Inventory extends Widget implements DTarget {
             }
         }
         return (true);
+    }
+
+    @Override
+    public boolean mousedown(Coord c, int button) {
+	return !locked && super.mousedown(c, button);
     }
 
     public void addchild(Widget child, Object... args) {
@@ -205,6 +230,30 @@ public class Inventory extends Widget implements DTarget {
         }
         return null;
     }
+    public WItem getItemPartialTrays(String name) {
+        for (Widget wdg = child; wdg != null; wdg = wdg.next) {
+            if (wdg instanceof WItem) {
+                String wdgname = ((WItem)wdg).item.getname();
+                if (wdgname.contains(name))
+                    return (WItem) wdg;
+            }
+        }
+        return null;
+    }
+    public WItem getItemPartialDrink(String name) {
+        for (Widget wdg = child; wdg != null; wdg = wdg.next) {
+            if (wdg instanceof WItem) {
+                String wdgname = ((WItem) wdg).item.getname();
+                if (wdgname.contains(name))
+                    if (!PBotUtils.canDrinkFrom((WItem) wdg))
+                return null;
+                if (PBotUtils.canDrinkFrom((WItem) wdg)) {
+                    return (WItem) wdg;
+                }
+            }
+        }
+        return null;
+    }
 
     public int getItemPartialCount(String name) {
         int count = 0;
@@ -227,6 +276,46 @@ public class Inventory extends Widget implements DTarget {
         return feespace;
     }
 
+    // Null if no free slots found
+    public Coord getFreeSlot() {
+    	int[][] invTable = new int[isz.x][isz.y];
+        for (Widget wdg = child; wdg != null; wdg = wdg.next) {
+            if (wdg instanceof WItem) {
+            	WItem item = (WItem) wdg;
+            	for(int i=0; i<item.sz.div(sqsz).y; i++)
+            		for(int j=0; j<item.sz.div(sqsz).x; j++)
+            			invTable[item.c.div(sqsz).x+j][item.c.div(sqsz).y+i] = 1;
+            }
+        }
+        for(int i=0; i<isz.y; i++) {
+        	for(int j=0; j<isz.x; j++) {
+        		if(invTable[j][i] == 0)
+        			return new Coord(j, i);
+        	}
+        }
+        return null;
+    }
+
+    public List<Coord> getFreeSlots() {
+        List<Coord> cordlist = new ArrayList<>();
+        int[][] invTable = new int[isz.x][isz.y];
+        for (Widget wdg = child; wdg != null; wdg = wdg.next) {
+            if (wdg instanceof WItem) {
+                WItem item = (WItem) wdg;
+                for(int i=0; i<item.sz.div(sqsz).y; i++)
+                    for(int j=0; j<item.sz.div(sqsz).x; j++)
+                        invTable[item.c.div(sqsz).x+j][item.c.div(sqsz).y+i] = 1;
+            }
+        }
+        for(int i=0; i<isz.y; i++) {
+            for(int j=0; j<isz.x; j++) {
+                if(invTable[j][i] == 0)
+                    cordlist.add(new Coord(j,i));
+            }
+        }
+        return cordlist;
+    }
+
     public boolean drink(int threshold) {
         IMeter.Meter stam = gameui().getmeter("stam", 0);
         if (stam == null || stam.a > threshold)
@@ -245,4 +334,9 @@ public class Inventory extends Widget implements DTarget {
 
         return false;
     }
+    public static Coord invsz(Coord sz) { return invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1)); }
+
+    public static Coord sqroff(Coord c){ return c.div(invsq.sz()); }
+
+    public static Coord sqoff(Coord c){ return c.mul(invsq.sz()); }
 }

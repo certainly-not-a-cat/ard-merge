@@ -26,7 +26,8 @@
 
 package haven;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import haven.Audio.CS;
 
@@ -79,13 +80,24 @@ public class AudioSprite {
         public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
             super(owner, res);
             haven.Audio.CS stream = clip.stream();
-
             if (Config.sfxchipvol != 1.0 && "sfx/chip".equals(res.name))
                 stream = new Audio.VolAdjust(stream, Config.sfxchipvol);
             else if ("sfx/squeak".equals(res.name))
                 stream = new Audio.VolAdjust(stream, 0.2);
             else if (Config.sfxquernvol != 1.0 && "sfx/terobjs/quern".equals(res.name))
                 stream = new Audio.VolAdjust(stream, Config.sfxquernvol);
+            else if(Config.sfxdoorvol != 1.0 && "sfx/terobjs/arch/door".equals(res.name))
+                stream = new Audio.VolAdjust(stream, Config.sfxdoorvol);
+            else if(Config.sfxclapvol != 1.0 && "sfx/borka/clap".equals(res.name))
+            	stream = new Audio.VolAdjust(stream, Config.sfxclapvol);
+            else if(Config.sfxchatvol != 1.0 && "sfx/hud/chat".equals(res.name))
+                stream = new Audio.VolAdjust(stream, Config.sfxchatvol);
+            else if(Config.sfxwhistlevol != 1.0 && "sfx/borka/whistle".equals(res.name))
+                stream = new Audio.VolAdjust(stream, Config.sfxwhistlevol);
+            else if(Config.sfxdingvol != 1.0 && "sfx/msg".equals(res.name))
+                stream = new Audio.VolAdjust(stream,Config.sfxdingvol);
+
+
 
             this.clip = new ActAudio.PosClip(new Audio.Monitor(stream) {
                 protected void eof() {
@@ -124,23 +136,23 @@ public class AudioSprite {
         public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final List<Resource.Audio> clips, Resource.Audio end) {
             super(owner, res);
             this.end = end;
-            CS rep = new Audio.Repeater() {
-                private boolean f = true;
+                CS rep = new Audio.Repeater() {
+                    private boolean f = true;
 
-                public CS cons() {
-                    if(f && (beg != null)) {
-                        f = false;
-                        return(beg.stream());
-                    }
+                    public CS cons() {
+                        if (f && (beg != null)) {
+                            f = false;
+                            return (beg.stream());
+                        }
                     return(clips.get((int)(Math.random() * clips.size())).stream());
-                }
-            };
-
-            if (Config.sfxbeevol != 1.0 && "sfx/kritter/beeswarm".equals(res.name))
-                rep = new Audio.VolAdjust(rep, Config.sfxbeevol);
+                    }
+                };
+            if (Config.sfxbeehivevol != 1.0 && "sfx/kritter/beeswarm".equals(res.name))
+                rep = new Audio.VolAdjust(rep, Config.sfxbeehivevol);
 
             this.clip = new ActAudio.PosClip(rep);
-        }
+            }
+
 
         public boolean setup(RenderList r) {
             if (clip != null)
@@ -180,6 +192,8 @@ public class AudioSprite {
             } else {
                 if (Config.sfxfirevol != 1.0 && "sfx/fire".equals(res.name))
                     this.amb = new ActAudio.Ambience(res, Config.sfxfirevol);
+                else if(Config.sfxcauldronvol != 1.0 && res.basename().contains("cauldron"))
+                    this.amb = new ActAudio.Ambience(res, Config.sfxcauldronvol);
                 else
                     this.amb = new ActAudio.Ambience(res);
             }

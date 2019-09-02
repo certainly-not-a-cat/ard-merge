@@ -1,13 +1,22 @@
 package haven.pathfinder;
 
 
-import haven.*;
-
-import java.awt.*;
-import java.util.*;
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+
+import haven.Coord;
+import haven.Gob;
+import haven.GobHitbox;
+import haven.MCache;
+import haven.Pair;
+import haven.Resource;
 
 public class Map {
+
     public final static byte CELL_FREE = 0;
     public final static byte CELL_BLK = 1 << 1;
     public final static byte CELL_WP = 1 << 2;
@@ -70,6 +79,7 @@ public class Map {
                         !name.equals("gfx/tiles/nil") &&
                         !name.startsWith("gfx/tiles/rocks/"))
                     continue;
+
 
                 int gcx = origin - (x * 11) - dx;
                 int gcy = origin - (y * 11) - dy;

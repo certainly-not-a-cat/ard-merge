@@ -220,9 +220,10 @@ public class Screenshooter extends Window {
 		    btn = add(new Button(125, "Retry", false, Screenshooter.this::upload), btnc);
 		}
 	    } catch(IOException e) {
-		if(cancelled)
-		    setstate("Cancelled");
-		else if(e instanceof UploadError)
+		// if(e instanceof UploadError)
+	  if(cancelled)
+	      setstate("Cancelled");
+	  else if(e instanceof UploadError)
 		    setstate("Error: " + e.getMessage());
 		else
 		    setstate("Could not upload image");
@@ -271,23 +272,23 @@ public class Screenshooter extends Window {
 	    conn.connect();
 	    OutputStream out = conn.getOutputStream();
 	    try {
-		hackint = out;
-		int off = 0;
-		while(off < data.length) {
+			  hackint = out;
+				int off = 0;
+				while(off < data.length) {
 		    setstate(String.format("Uploading (%d%%)...", (off * 100) / data.length));
 		    int len = Math.min(1024, data.length - off);
 		    out.write(data, off, len);
 		    off += len;
 		}
 	    } finally {
-		hackint = null;
-		out.close();
+	    	hackint = null;
+				out.close();
 	    }
 	    setstate("Awaiting response...");
 	    InputStream in = conn.getInputStream();
 	    final URL result;
 	    try {
-		hackint = in;
+	    	hackint = in;
 		if(conn.getContentType().equals("text/x-error-response"))
 		    throw(new UploadError(new String(Utils.readall(in), "utf-8")));
 		if(!conn.getContentType().equals("text/x-target-url"))
@@ -299,7 +300,7 @@ public class Screenshooter extends Window {
 		    throw((IOException)new IOException("Unexpected reply from server").initCause(e));
 		}
 	    } finally {
-		hackint = null;
+	    	hackint = null;
 		in.close();
 	    }
 	    setstate("Done");
@@ -311,7 +312,6 @@ public class Screenshooter extends Window {
 			}), btnc);
 	    }
 	}
-
 	public void interrupt() {
 	    cancelled = true;
 	    Closeable c = hackint;

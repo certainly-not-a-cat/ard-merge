@@ -26,8 +26,16 @@
 
 package haven;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import haven.GLState.Buffer;
-import java.util.*;
 
 public class RenderList {
     public static final int INSTANCE_THRESHOLD = 10;
@@ -433,6 +441,12 @@ public class RenderList {
                 return;
             else
                 throw(l);
+        } catch(Defer.NotDoneException e){
+            if(Config.noloadscreen){
+                return;
+            }else{
+                throw (e);
+            }
         }
     }
 

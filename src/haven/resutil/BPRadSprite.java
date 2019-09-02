@@ -1,18 +1,20 @@
 package haven.resutil;
 
+import java.awt.Color;
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
+
 import haven.*;
 import haven.States.ColState;
 import haven.VertexBuf.NormalArray;
 import haven.VertexBuf.VertexArray;
 
-import java.awt.*;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-
 public class BPRadSprite extends Sprite {
-    public static final GLState smatDanger = new ColState(new Color(192, 0, 0, 80));
-    public static final GLState smatBeehive = new ColState(new Color(233, 234, 134, 80));
-    public static final GLState smatTrough = new ColState(new Color(147, 234, 133, 80));
+    public static GLState smatDanger = new ColState(DefSettings.ANIMALDANGERCOLOR.get());
+    public static GLState smatSupports = new ColState(DefSettings.SUPPORTDANGERCOLOR.get());
+    public static Material.Colors cRackMissing = new Material.Colors(DefSettings.CHEESERACKMISSINGCOLOR.get());
+    public static  GLState smatBeehive = new ColState((DefSettings.BEEHIVECOLOR.get()));
+    public static  GLState smatTrough = new ColState(DefSettings.TROUGHCOLOR.get());
     final GLState smat;
     final VertexArray posa;
     final NormalArray nrma;
@@ -52,6 +54,10 @@ public class BPRadSprite extends Sprite {
         Location.goback(rl.state(), "gobx");
         rl.state().put(States.color, null);
         return true;
+    }
+
+    public void updateSmatSupports(){
+        smatSupports = new ColState(new Color(Config.smatSupportsred, Config.smatSupportsgreen, Config.smatSupportsblue, 100));
     }
 
     public void draw(GOut g) {

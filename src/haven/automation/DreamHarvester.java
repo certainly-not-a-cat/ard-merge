@@ -1,9 +1,14 @@
 package haven.automation;
 
 
-import haven.*;
-
 import static haven.OCache.posres;
+
+import haven.Coord2d;
+import haven.FlowerMenu;
+import haven.GameUI;
+import haven.Gob;
+import haven.Loading;
+import haven.Resource;
 
 public class DreamHarvester implements Runnable {
     private GameUI gui;

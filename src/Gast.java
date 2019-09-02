@@ -1,8 +1,9 @@
+import java.awt.image.BufferedImage;
+
+import haven.ItemInfo.Tip;
 import haven.Resource;
 import haven.RichText;
 import haven.Utils;
-import haven.ItemInfo.Tip;
-import java.awt.image.BufferedImage;
 
 public class Gast extends Tip {
     public final double glut;

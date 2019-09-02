@@ -26,17 +26,28 @@
 
 package haven;
 
-import java.awt.*;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.awt.event.KeyEvent;
-import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import haven.purus.pbot.PBotUtils;
 
 import static haven.CharWnd.attrf;
 import static haven.Inventory.invsq;
 import static haven.Window.wbox;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FightWnd extends Widget {
     public final int nsave;
@@ -48,7 +59,7 @@ public class FightWnd extends Widget {
     private final ImageInfoBox info;
     private Tex count;
     private final Map<Indir<Resource>, Object[]> actrawinfo = new HashMap<>();
-    private Dropbox<Pair<Text, Integer>> schoolsDropdown;
+    public Dropbox<Pair<Text, Integer>> schoolsDropdown;
 
     private static final Set<String> attacks = new HashSet<>(Arrays.asList(
             "paginae/atk/pow",
@@ -522,7 +533,7 @@ public class FightWnd extends Widget {
                     keysftex[i] = Text.render(FightWnd.keysf[i - 5]).tex();
             }
         }
-        
+
         final Tex[] keysfftex = new Tex[10];
         {
         	for(int i = 0; i < 10; i++) {
@@ -567,7 +578,7 @@ public class FightWnd extends Widget {
                     }
                 } catch(Loading l) {}
                 g.chcolor(156, 180, 158, 255);
-                
+
                 Tex keytex;
                 if(Config.combatkeys == 0)
                 {
@@ -579,7 +590,7 @@ public class FightWnd extends Widget {
                 {
                 	keytex = keysfftex[i];
                 }
-                
+
                 g.aimage(keytex, c.add(invsq.sz().sub(2, 0)), 1, 1);
                 g.chcolor();
             }
@@ -736,6 +747,7 @@ public class FightWnd extends Widget {
     public static class $_ implements Factory {
         public Widget create(UI ui, Object[] args) {
             return(new FightWnd((Integer)args[0], (Integer)args[1], (Integer)args[2]));
+          //  return(new FightWndEx((Integer)args[0], (Integer)args[1], (Integer)args[2]));
         }
     }
 
@@ -833,17 +845,20 @@ public class FightWnd extends Widget {
             }
 
             @Override
+            public void change2(Pair<Text, Integer> item) {
+                super.change2(item);
+           }
+
+            @Override
             public void change(Pair<Text, Integer> item) {
                 super.change(item);
                 load(item.b);
                 use(item.b);
             }
 
-            @Override
-            public void change2(Pair<Text, Integer> item) {
-                super.change2(item);
-            }
+
         };
+
 
         info = add(new ImageInfoBox(new Coord(223, 152)), new Coord(5, 35).add(wbox.btloff()));
         Frame.around(this, Collections.singletonList(info));
@@ -920,6 +935,19 @@ public class FightWnd extends Widget {
         }, 405, 277);
 
         pack();
+    }
+
+    public void changebutton(Integer index){
+        try {
+            if(!saves[index].text.equals("unused save")) {
+                schoolsDropdown.change(new Pair(saves[index], index));
+                PBotUtils.sysMsg("Switched to deck : " + saves[index].text, Color.white);
+            }
+            else
+                PBotUtils.sysMsg("This is not a saved deck, not switching.",Color.white);
+        }catch(Exception e ){
+            PBotUtils.sysLogAppend("Exception switching combat decks, exception ignored to avoid crash.","white");
+        }
     }
 
     private static int actionsListHeight() {

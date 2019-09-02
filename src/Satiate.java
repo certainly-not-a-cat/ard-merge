@@ -1,9 +1,16 @@
 
-import haven.*;
+import java.awt.image.BufferedImage;
+
+import haven.CharWnd;
+import haven.Coord;
+import haven.Indir;
+import haven.ItemInfo;
 import haven.ItemInfo.InfoFactory;
 import haven.ItemInfo.Owner;
-
-import java.awt.image.BufferedImage;
+import haven.PUtils;
+import haven.Resource;
+import haven.RichText;
+import haven.Text;
 
 public class Satiate implements InfoFactory {
     public Satiate() {

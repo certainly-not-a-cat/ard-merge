@@ -1,10 +1,10 @@
 package haven.res.ui.tt;
 
+import java.awt.image.BufferedImage;
+
 import haven.ItemInfo.Tip;
 import haven.Resource;
 import haven.Text;
-
-import java.awt.image.BufferedImage;
 
 public class Armor extends Tip {
     public final int hard;

@@ -1,12 +1,12 @@
-import haven.ItemInfo.Layout.ID;
-import haven.ItemInfo.Tip;
-import haven.Resource;
-import haven.RichText;
-
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import haven.ItemInfo.Layout.ID;
+import haven.ItemInfo.Tip;
+import haven.Resource;
+import haven.RichText;
 
 
 public class Ingredient extends Tip {

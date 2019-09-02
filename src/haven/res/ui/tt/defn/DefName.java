@@ -2,12 +2,12 @@ package haven.res.ui.tt.defn;
 
 import haven.GSprite;
 import haven.ItemInfo;
-import haven.Resource;
 import haven.ItemInfo.InfoFactory;
 import haven.ItemInfo.Name;
 import haven.ItemInfo.Owner;
 import haven.ItemInfo.ResOwner;
 import haven.ItemInfo.SpriteOwner;
+import haven.Resource;
 import haven.Resource.Tooltip;
 
 public class DefName implements InfoFactory {

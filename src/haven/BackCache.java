@@ -26,8 +26,10 @@
 
 package haven;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class BackCache<K, V> {
     public final Function<K, V> load;

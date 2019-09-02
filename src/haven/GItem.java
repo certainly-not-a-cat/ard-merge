@@ -26,16 +26,24 @@
 
 package haven;
 
-import haven.res.ui.tt.q.qbuff.QBuff;
+import static haven.Text.num10Fnd;
+import static haven.Text.num12boldFnd;
 
 import java.awt.Color;
-import java.util.*;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
-import static haven.Text.num10Fnd;
+import haven.automation.MinerAlert;
+import haven.purus.pbot.PBotAPI;
+import haven.purus.pbot.PBotUtils;
+import haven.res.ui.tt.q.qbuff.QBuff;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
+    private static ItemFilter filter;
+    private static long lastFilter = 0;
     public MessageBuf sdt;
     public int meter = 0;
     public int num = -1;
@@ -45,8 +53,16 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private QBuff quality;
     public Tex metertex;
     public double studytime = 0.0;
+    public boolean drop = false;
+    private double dropTimer = 0;
+    public boolean matches = false;
+    public boolean sendttupdate = false;
+    private long filtered = 0;
     private boolean postProcessed = false;
-
+    public static void setFilter(ItemFilter filter) {
+        GItem.filter = filter;
+        lastFilter = System.currentTimeMillis();
+    }
     @RName("item")
     public static class $_ implements Factory {
         public Widget create(UI ui, Object[] args) {
@@ -98,7 +114,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         }
 
         public static BufferedImage numrender(int num, Color col) {
+            if(!Config.largeqfont)
             return Text.renderstroked(num + "", col, Color.BLACK).img;
+            else
+                return Text.renderstroked(num + "", col, Color.BLACK,num12boldFnd).img;
         }
     }
 
@@ -181,10 +200,36 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         return (spr);
     }
 
+    public String resname(){
+        Resource res = resource();
+        if(res != null){
+            return res.name;
+        }
+        return "";
+    }
+
     public void tick(double dt) {
+    	super.tick(dt);
+        if(drop) {
+        	dropTimer += dt;
+        	if(dropTimer > 0.1) {
+        		dropTimer = 0;
+        		wdgmsg("drop", Coord.z);
+        	}
+        }
         GSprite spr = spr();
         if (spr != null)
             spr.tick(dt);
+        testMatch();
+    }
+
+    public void testMatch() {
+        try {
+            if(filtered < lastFilter && spr != null) {
+                matches = filter != null && filter.matches(info());
+                filtered = lastFilter;
+            }
+        } catch (Loading ignored) {}
     }
 
     public List<ItemInfo> info() {
@@ -217,6 +262,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
             if (rawinfo != null)
                 quality = null;
             rawinfo = new ItemInfo.Raw(args);
+            filtered = 0;
+            if(sendttupdate){wdgmsg("ttupdate");}
         } else if (name == "meter") {
             meter = (int)((Number)args[0]).doubleValue();
             metertex = Text.renderstroked(String.format("%d%%", meter), Color.WHITE, Color.BLACK, num10Fnd).tex();
@@ -260,19 +307,39 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
 
     private void dropItMaybe() {
-        Resource curs = ui.root.getcurs(Coord.z);
-        if (Config.dropEverything) {
-            this.wdgmsg("drop", Coord.z);
-        } else {
+        try {
+            Resource curs = ui.root.getcurs(Coord.z);
             String name = this.resource().basename();
-            if ((Config.dropSoil && name.equals("soil")))
-                this.wdgmsg("drop", Coord.z);
-            if (curs != null && curs.name.equals("gfx/hud/curs/mine") &&
-                    (Config.dropMinedStones && Config.mineablesStone.contains(name) ||
-                    Config.dropMinedOre && Config.mineablesOre.contains(name) ||
-                    Config.dropMinedOrePrecious && Config.mineablesOrePrecious.contains(name) ||
-                    Config.dropMinedCurios && Config.mineablesCurios.contains(name)))
-                this.wdgmsg("drop", Coord.z);
+            String invname = this.getname();
+            for (String itm : Config.autodroplist.keySet()) {
+                if (itm.equals(invname) && Config.autodroplist.get(itm)) {
+                    this.wdgmsg("drop", Coord.z);
+                }
+            }
+            if (curs != null && curs.name.equals("gfx/hud/curs/mine")) {
+                if (PBotUtils.getStamina() < 40) {
+                    PBotUtils.drink(false);
+                }
+                if (Config.dropMinedStones && Config.mineablesStone.contains(name) ||
+                        Config.dropMinedOre && Config.mineablesOre.contains(name) ||
+                        Config.dropMinedOrePrecious && Config.mineablesOrePrecious.contains(name) ||
+                        Config.dropMinedCatGold && this.getname().contains("Cat Gold") ||
+                        Config.dropMinedCrystals && this.getname().contains("Strange Crystal") ||
+                        Config.dropMinedSeaShells && this.getname().contains("Petrified Seashell"))
+                    this.wdgmsg("drop", Coord.z);
+            }
+        }catch(Resource.Loading e){e.printStackTrace(); }
+    }
+    public Coord size() {
+        Indir<Resource> res = getres().indir();
+        if (res.get() != null && res.get().layer(Resource.imgc) != null) {
+            Tex tex = res.get().layer(Resource.imgc).tex();
+            if(tex == null)
+                return new Coord(1, 1);
+            else
+                return tex.sz().div(30);
+        } else {
+            return new Coord(1, 1);
         }
     }
 }

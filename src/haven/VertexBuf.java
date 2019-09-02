@@ -626,8 +626,8 @@ public class VertexBuf {
                     cons.cons(bufs, res, sub, num);
                     sub.skip();
                 } else {
-                    cons.cons(bufs, res, buf, num);
-                }
+                cons.cons(bufs, res, buf, num);
+            }
             }
             this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));
         }

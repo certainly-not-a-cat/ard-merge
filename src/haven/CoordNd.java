@@ -26,8 +26,12 @@
 
 package haven;
 
-import java.util.function.*;
-import static java.lang.Math.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 
 public class CoordNd implements java.io.Serializable {
     public final double[] el;

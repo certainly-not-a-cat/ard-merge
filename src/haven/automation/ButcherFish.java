@@ -1,7 +1,9 @@
 package haven.automation;
 
 
-import haven.*;
+import haven.FlowerMenu;
+import haven.GameUI;
+import haven.WItem;
 
 public class ButcherFish implements Runnable, WItemDestroyCallback {
     private GameUI gui;

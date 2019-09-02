@@ -26,8 +26,9 @@
 
 package haven;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 public interface OwnerContext {
     public <T> T context(Class<T> cl);

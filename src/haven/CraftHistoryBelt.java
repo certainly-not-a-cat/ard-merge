@@ -1,5 +1,8 @@
 package haven;
 
+import haven.purus.pbot.PBotAPI;
+import haven.purus.pbot.PBotUtils;
+
 import static haven.Inventory.invsq;
 
 public class CraftHistoryBelt extends Widget {
@@ -47,6 +50,10 @@ public class CraftHistoryBelt extends Widget {
         if (slot != -1) {
             if (button == 1 && belt[slot] != null) {
                 String[] ad = belt[slot].act().ad;
+                if (ad.length > 0 && (ad[0].equals("craft") || ad[0].equals("bp"))) {
+                    MenuGrid g = PBotAPI.gui.menu;
+                    g.lastCraft = g.getPagina(ad[1]);
+                }
                 gameui().act(ad);
             } else if (button == 1 && belt[slot] == null) {
                 if (ui.modshift) {

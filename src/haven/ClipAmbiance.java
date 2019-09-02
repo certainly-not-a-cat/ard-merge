@@ -26,8 +26,8 @@
 
 package haven;
 
-import java.util.*;
-import haven.Audio.CS;
+import java.util.List;
+
 import haven.Audio.VolAdjust;
 
 public class ClipAmbiance implements Rendered, Rendered.Instanced {

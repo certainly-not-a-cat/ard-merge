@@ -26,7 +26,7 @@
 
 package haven;
 
-import java.util.*;
+import java.util.Iterator;
 
 public class Area implements Iterable<Coord>, java.io.Serializable {
     public Coord ul, br;

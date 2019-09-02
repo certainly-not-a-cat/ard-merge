@@ -1,11 +1,14 @@
 package haven.res.ui.tt.q.qbuff;
 
-import haven.*;
+import static haven.Text.num10Fnd;
+import static haven.Text.num12boldFnd;
 
-import java.awt.*;
+
+
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
-import static haven.Text.num10Fnd;
+import haven.*;
 
 
 public class QBuff extends ItemInfo.Tip {
@@ -24,8 +27,13 @@ public class QBuff extends ItemInfo.Tip {
         this.name = Resource.getLocString(Resource.BUNDLE_LABEL, name);
         this.q = q;
         if (q != 0) {
-            qtex = Text.renderstroked(Utils.fmt1DecPlace(q), Color.WHITE, Color.BLACK, num10Fnd).tex();
-            qwtex = Text.renderstroked(Math.round(q) + "", Color.WHITE, Color.BLACK, num10Fnd).tex();
+            if(!Config.largeqfont) {
+                qtex = Text.renderstroked(Utils.fmt1DecPlace(q), Color.WHITE, Color.BLACK, num10Fnd).tex();
+                qwtex = Text.renderstroked(Math.round(q) + "", Color.WHITE, Color.BLACK, num10Fnd).tex();
+            }else{
+                qtex = Text.renderstroked(Utils.fmt1DecPlace(q), Color.WHITE, Color.BLACK, num12boldFnd).tex();
+                qwtex = Text.renderstroked(Math.round(q) + "", Color.WHITE, Color.BLACK, num12boldFnd).tex();
+            }
         }
     }
 

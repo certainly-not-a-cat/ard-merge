@@ -1,9 +1,12 @@
 package haven.automation;
 
 
-import haven.*;
-
 import static haven.OCache.posres;
+
+import haven.*;
+import haven.pathfinder.Map;
+
+import java.awt.*;
 
 public class Shoo implements Runnable {
     private GameUI gui;
@@ -14,7 +17,7 @@ public class Shoo implements Runnable {
 
     @Override
     public void run() {
-        Gob animal = null;
+Gob animal = null;
         synchronized (gui.map.glob.oc) {
             for (Gob gob : gui.map.glob.oc) {
                 try {
@@ -26,7 +29,7 @@ public class Shoo implements Runnable {
                             res.name.startsWith("gfx/kritter/goat")))
                     {
                         Coord2d plc = gui.map.player().rc;
-                        if ((animal == null || gob.rc.dist(plc) < animal.rc.dist(plc)) && gob.knocked == false)
+                        if ((animal == null || gob.rc.dist(plc) < animal.rc.dist(plc)) && !gob.isDead())
                             animal = gob;
                     }
                 } catch (Loading l) {

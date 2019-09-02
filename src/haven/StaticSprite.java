@@ -26,26 +26,28 @@
 
 package haven;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
 
 public class StaticSprite extends Sprite {
     public final Rendered[] parts;
 
     public static final Factory fact = new Factory() {
         public Sprite create(Owner owner, Resource res, Message sdt) {
-            if((res.layer(FastMesh.MeshRes.class) != null) ||
-                    (res.layer(RenderLink.Res.class) != null))
+            if((res.layer(FastMesh.MeshRes.class) != null) || (res.layer(RenderLink.Res.class) != null))
                 return(new StaticSprite(owner, res, sdt) {
                     public String toString() {
                         return("StaticSprite(" + res + ")");
                     }
-                });
+                }
+                );
             return(null);
         }
     };
 
     public StaticSprite(Owner owner, Resource res, Rendered[] parts) {
         super(owner, res);
+      //  System.out.println(res.name);
         this.parts = parts;
     }
 

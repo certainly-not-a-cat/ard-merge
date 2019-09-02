@@ -26,12 +26,29 @@
 
 package haven;
 
-import java.awt.*;
+//import haven.sloth.script.pathfinding.GobHitmap;
+
+import haven.sloth.script.pathfinding.GobHitmap;
+
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.awt.Color;
+import java.lang.ref.WeakReference;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Observable;
 
 public class Glob {
+    //TODO: Glob should honestly make the ui, not have the UI attach onto it.
+    public WeakReference<UI> ui;
+    public final GobHitmap gobhitmap;
     public static final double SERVER_TIME_RATIO = 3.29d;
     public double serverEpoch, localEpoch = Utils.rtime();
+    //public final GobHitmap gobhitmap;
     public Astronomy ast;
     public OCache oc = new OCache(this);
     public MCache map;
@@ -42,6 +59,7 @@ public class Glob {
     public Color olightamb = null, olightdif = null, olightspc = null;
     public Color tlightamb = null, tlightdif = null, tlightspc = null;
     public static Color dlightamb = new Color(200, 200, 200);
+    public static Color dlightdif = new Color(200, 200, 200);
     public static Color dlightspc = new Color(255, 255, 255);
     public double lightang = 0.0, lightelev = 0.0;
     public double olightang = 0.0, olightelev = 0.0;
@@ -53,6 +71,8 @@ public class Glob {
     public static haven.timers.TimersThread timersThread;
     public String servertime;
     public Tex servertimetex;
+    public int moonid = 0;
+    public boolean night =false; //true is night
 
     static {
         timersThread = new haven.timers.TimersThread();
@@ -61,6 +81,7 @@ public class Glob {
 
     public Glob(Session sess) {
         this.sess = sess;
+        gobhitmap = new GobHitmap();
         map = new MCache(sess);
         party = new Party(this);
     }
@@ -75,14 +96,17 @@ public class Glob {
     }
 
     public static class CAttr extends Observable {
+        public static final Text.Foundry fnd = new Text.Foundry(Text.sans, 12);
         String nm;
         int base, comp;
+        private Text.Line compLine = null;
         public Tex comptex;
 
         public CAttr(String nm, int base, int comp) {
             this.nm = nm.intern();
             this.base = base;
             this.comp = comp;
+            compLine = null;
             this.comptex = Text.renderstroked(comp + "", Color.WHITE, Color.BLACK, Text.num12boldFnd).tex();
         }
 
@@ -91,9 +115,22 @@ public class Glob {
                 return;
             this.base = base;
             this.comp = comp;
+            compLine = null;
             setChanged();
             notifyObservers(null);
             this.comptex = Text.renderstroked(comp + "", Color.WHITE, Color.BLACK, Text.num12boldFnd).tex();
+        }
+        public Text.Line compline() {
+            if(compLine == null) {
+                Color c = Color.WHITE;
+                if(comp > base) {
+                    c = CharWnd.buff;
+                } else if(comp < base) {
+                    c = CharWnd.debuff;
+                }
+                compLine = Text.renderstroked(Integer.toString(comp), c, Color.BLACK, fnd);
+            }
+            return compLine;
         }
     }
 
@@ -182,6 +219,25 @@ public class Glob {
         servertime = String.format(Resource.getLocString(Resource.BUNDLE_LABEL, "Day %d, %02d:%02d"), day, hours, mins);
         if (secintoday >= dewyladysmantletimemin && secintoday <= dewyladysmantletimemax)
             servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Dewy Lady's Mantle)");
+        if(night) {
+            if (moonid == 128)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (New Moon)");
+            else if (moonid == 129)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Waxing Crescent)");
+            else if (moonid == 130)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (First Quarter)");
+            else if (moonid == 131)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Waxing Gibbous)");
+            else if (moonid == 132)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Full Moon)");
+            else if (moonid == 133)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Waning Gibbous)");
+            else if (moonid == 134)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Last Quarter)");
+            else if (moonid == 135)
+                servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Waning Crescent)");
+        }else
+            servertime += Resource.getLocString(Resource.BUNDLE_LABEL, " (Daytime)");
         servertimetex = Text.render(servertime).tex();
     }
 
@@ -203,10 +259,10 @@ public class Glob {
                 double yt = ((Number) a[n++]).doubleValue();
                 boolean night = (Integer) a[n++] != 0;
                 Color mc = (Color) a[n++];
-                int is = (n < a.length) ? ((Number)a[n++]).intValue() : 1;
-                double sp = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
-                double sd = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
-                ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd);
+		int is = (n < a.length) ? ((Number)a[n++]).intValue() : 1;
+		double sp = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		double sd = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd);
             } else if (t == "light") {
                 synchronized (this) {
                     tlightamb = (Color) a[n++];

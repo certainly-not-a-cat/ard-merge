@@ -1,14 +1,16 @@
 package haven;
 
+import java.awt.Color;
+import haven.sloth.gob.Type;
 import javax.media.opengl.GL2;
-import java.awt.*;
 
 public class GobHitbox extends Sprite {
-    public static States.ColState fillclrstate = new States.ColState(Utils.hex2rgb(Config.treeboxclr));
+    public static States.ColState fillclrstate = new States.ColState(DefSettings.HIDDENCOLOR.get());
     private static final States.ColState bbclrstate = new States.ColState(new Color(255, 255, 255, 255));
     private Coordf a, b, c, d;
     private int mode;
     private States.ColState clrstate;
+    private boolean wall = false;
 
     public GobHitbox(Gob gob, Coord ac, Coord bc, boolean fill) {
         super(gob, null);
@@ -16,7 +18,12 @@ public class GobHitbox extends Sprite {
         if (fill) {
             mode =  GL2.GL_QUADS;
             clrstate = fillclrstate;
-        } else {
+        } else if (gob.type != Type.WALLSEG){
+            mode =  GL2.GL_LINE_LOOP;
+            clrstate = bbclrstate;
+        } else{
+            if(Config.flatwalls)
+                 wall = true;
             mode =  GL2.GL_LINE_LOOP;
             clrstate = bbclrstate;
         }
@@ -37,19 +44,25 @@ public class GobHitbox extends Sprite {
     public void draw(GOut g) {
         g.apply();
         BGL gl = g.gl;
-        if (mode ==  GL2.GL_LINE_LOOP) {
+        if (mode ==  GL2.GL_LINE_LOOP && !wall) {
             gl.glLineWidth(2.0F);
             gl.glBegin(mode);
             gl.glVertex3f(a.x, a.y, 1);
             gl.glVertex3f(b.x, b.y, 1);
             gl.glVertex3f(c.x, c.y, 1);
             gl.glVertex3f(d.x, d.y, 1);
-        } else {
+        } else if (!wall){
             gl.glBegin(mode);
             gl.glVertex3f(a.x, a.y, 1);
             gl.glVertex3f(d.x, d.y, 1);
             gl.glVertex3f(c.x, c.y, 1);
             gl.glVertex3f(b.x, b.y, 1);
+        }else {
+            gl.glBegin(mode);
+            gl.glVertex3f(a.x, a.y, 11);
+            gl.glVertex3f(d.x, d.y, 11);
+            gl.glVertex3f(c.x, c.y, 11);
+            gl.glVertex3f(b.x, b.y, 11);
         }
         gl.glEnd();
     }
@@ -116,13 +129,13 @@ public class GobHitbox extends Sprite {
                 return null;
         }
 
-        // either i completely misinterpreted how bounding boxes are defined
-        // or some negs simply have wrong Y dimensions. in either case this fixes it
+
         if (name.endsWith("/smelter"))
             return bboxSmelter;
         else if (name.endsWith("brickwallseg") || name.endsWith("brickwallcp") ||
                 name.endsWith("palisadeseg") || name.endsWith("palisadecp") ||
-                name.endsWith("poleseg") || name.endsWith("polecp"))
+                name.endsWith("poleseg") || name.endsWith("polecp") ||
+                name.endsWith("drystonewallseg") || name.endsWith("drystonewallcp"))
             return bboxWallseg;
         else if (name.endsWith("/hwall"))
             return bboxHwall;
@@ -137,6 +150,6 @@ public class GobHitbox extends Sprite {
             }
         }
 
-        return neg == null ? null : new BBox(neg.ac, neg.bc);
+        return neg == null ? null : new BBox(neg.bs, neg.bc);
     }
 }

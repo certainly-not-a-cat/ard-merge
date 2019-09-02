@@ -28,12 +28,18 @@ package haven;
 
 import static haven.MCache.tilesz;
 
-import java.util.*;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
-import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
+import haven.Surface.Vertex;
 
 public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
@@ -136,6 +142,7 @@ public class MapMesh implements Rendered, Disposable {
             for (int y = vs.ul.y; y < vs.br.y; y++) {
                 for (int x = vs.ul.x; x < vs.br.x; x++) {
                     surf[vs.o(x, y)] = new Vertex(x * (float)tilesz.x, y * -(float)tilesz.y, Config.disableelev ? 0 : map.getz(ul.add(x, y)));
+                  //  z = !Config.disableelev ? map.getz(ul.add(x, y)) : 0;surf[vs.o(x, y)] = new Vertex(x * (float)tilesz.x, y * -(float)tilesz.y, z);
                 }
             }
             for (int y = ts.ul.y; y < ts.br.y; y++) {
@@ -382,6 +389,7 @@ public class MapMesh implements Rendered, Disposable {
             this.cc = cc;
             final MeshBuf buf = new MeshBuf();
             final float cz = Config.disableelev ? 0 : (float)map.getcz(cc);
+           // final float cz =  (float)map.getcz(cc);
             final Coord ult, brt;
             {
                 Coord tult = null, tbrt = null;

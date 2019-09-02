@@ -1,14 +1,14 @@
 package haven.timers;
 
 
-import haven.Glob;
-import haven.Session;
-import haven.Utils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import haven.*;
+import haven.res.ui.tt.q.qbuff.QBuff;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class TimersThread extends Thread {
     private List<TimerWdg> timers = new ArrayList<TimerWdg>();
@@ -50,6 +50,8 @@ public class TimersThread extends Thread {
         synchronized (timers) {
             TimerWdg timer = new TimerWdg(name, duration, start);
             timers.add(timer);
+            if(Config.timersort)
+                sort(timers);
             return timer;
         }
     }
@@ -65,6 +67,7 @@ public class TimersThread extends Thread {
             return timers;
         }
     }
+
 
     public void save() {
         synchronized (timers) {
@@ -93,6 +96,21 @@ public class TimersThread extends Thread {
             }
             add(t.getString("name"), t.getLong("duration"), start);
         }
+    }
+
+    public void sort (List <TimerWdg> items) {
+        Collections.sort(items, (a, b) -> {
+            Long aq = a.duration;
+            Long bq = b.duration;
+            if (aq == null || bq == null)
+                return 0;
+            else if (aq.doubleValue() == bq.doubleValue())
+                return 0;
+            else if (aq.doubleValue() > bq.doubleValue())
+                return 1;
+            else
+                return -1;
+        });
     }
 }
 

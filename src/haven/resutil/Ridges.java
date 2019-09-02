@@ -26,17 +26,29 @@
 
 package haven.resutil;
 
-import java.util.*;
-
-import haven.*;
-import haven.MapMesh.Scan;
-import haven.MapMesh.Model;
-import haven.Surface.Vertex;
-import haven.Tiler.MPart;
-import haven.Tiler.SModel;
-import haven.Tiler.VertFactory;
-import haven.Surface.MeshVertex;
 import static haven.Utils.clip;
+
+import java.util.Arrays;
+import java.util.Random;
+
+import haven.Config;
+import haven.Coord;
+import haven.Coord3f;
+import haven.GLState;
+import haven.Light;
+import haven.MCache;
+import haven.MapMesh;
+import haven.MapMesh.Model;
+import haven.MapMesh.Scan;
+import haven.Material;
+import haven.MeshBuf;
+import haven.States;
+import haven.Surface;
+import haven.Surface.MeshVertex;
+import haven.Surface.Vertex;
+import haven.Tiler;
+import haven.Tiler.MPart;
+import haven.Utils;
 
 public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
@@ -204,7 +216,10 @@ public class Ridges extends MapMesh.Hooks {
                 hi = 10;
             } else {
                 lo = Math.min(z1, z2);
-                hi = Math.max(z1, z2);
+                if(Config.obviousridges)
+                    hi = Math.max(z1, z2) + 15;
+                else
+                    hi = Math.max(z1, z2);
             }
         }
         int nseg = Math.max((hi - lo + (segh / 2)) / segh, 2) - 1;
@@ -561,7 +576,7 @@ public class Ridges extends MapMesh.Hooks {
             for (int i = 0; i < n; i++) {
                 col[i] = new Coord3f(tcx + ((rnd.nextFloat() - 0.5f) * 5.0f),
                         tcy + ((rnd.nextFloat() - 0.5f) * 5.0f),
-                        Config.disableelev ? 10 : zs[i]);
+                        Config.disableelev ? 10 : (Config.obviousridges ? (zs[i] + 15) : zs[i]));
             }
         }
 
@@ -729,17 +744,17 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     public static boolean brokenp(MCache map, Coord tc) {
-        Tiler t = map.tiler(map.gettile(tc));
+        Tiler t = map.tiler(map.gettile_safe(tc));
         if (!(t instanceof RidgeTile))
             return (false);
         int bz = ((RidgeTile) t).breakz();
         for (Coord ec : tecs) {
-            t = map.tiler(map.gettile(tc.add(ec)));
+            t = map.tiler(map.gettile_safe(tc.add(ec)));
             if (t instanceof RidgeTile)
                 bz = Math.min(bz, ((RidgeTile) t).breakz());
         }
         for (int i = 0; i < 4; i++) {
-            if (Math.abs(map.getz(tc.add(tccs[(i + 1) % 4])) - map.getz(tc.add(tccs[i]))) > bz)
+            if (Math.abs(map.getz_safe(tc.add(tccs[(i + 1) % 4])) - map.getz_safe(tc.add(tccs[i]))) > bz)
                 return (true);
         }
         return (false);

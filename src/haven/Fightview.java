@@ -26,26 +26,35 @@
 
 package haven;
 
-import java.awt.*;
-import java.util.*;
+
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Fightview extends Widget {
-    static Tex bg = Resource.loadtex("gfx/hud/bosq");
+    static Tex bg = Theme.tex("bosq");
     static int height = 5;
     static int ymarg = 5;
     static int width = 165;
+    static int oldblue, lastactopening, unarmed;
+    private int damage = 0;
     static Coord avasz = new Coord(27, 27);
     static Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
     static Coord cgivec = new Coord(cavac.x - 35, cavac.y);
     static Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
     public LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public Relation current = null;
+    public static String ttretaincur, ttretain;
+    public List <Relation> notcurrent;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
     public Indir<Resource> lastact = null;
     public double lastuse = 0;
     public double atkcd;
-    private GiveButton curgive;
+    public GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
     public final Bufflist buffs = add(new Bufflist());
@@ -79,7 +88,7 @@ public class Fightview extends Widget {
         public void give(int state) {
             if (this == current)
                 curgive.state = state;
-            this.give.state = state;
+             this.give.state = state;
         }
 
         public void show(boolean state) {
@@ -95,39 +104,126 @@ public class Fightview extends Widget {
         }
 
         public void use(Indir<Resource> act) {
+            try {
             lastact = act;
             lastuse = Utils.rtime();
-            if (lastact != null && Config.logcombatactions) {
+            if(lastact != null)
+            if(lastact.get().basename().contains("cleave") && Config.cleavesound) {
                 try {
+                    Audio.play(Resource.local().loadwait(Config.cleavesfx), Config.cleavesoundvol);
+                }catch(Exception e){}//ignore because a crash here would prob get someone killed
+            }
+            if (lastact != null && Config.logcombatactions) {
                     Resource res = lastact.get();
                     Resource.Tooltip tt = res.layer(Resource.tooltip);
+                    ttretaincur = tt.t;
                     if (tt == null) {
                         gameui().syslog.append("Combat: WARNING! tooltip is missing for " + res.name + ". Notify Jorb/Loftar about this.", combatLogOpClr);
                         return;
                     }
-                    gameui().syslog.append(String.format("%d: %s, ip %d - %d", gobid, tt.t, ip, oip), combatLogOpClr);
-                } catch (Loading l) {
+                    OCache oc = gameui().map.glob.oc;
+                    Gob gob = oc.getgob(gobid);
+                    KinInfo kininfo = gob.getattr(KinInfo.class);
+                    if(kininfo != null)
+                    gameui().syslog.append(String.format("%s, %s, ip %d - %d", kininfo.name, tt.t, ip, oip), combatLogOpClr);
+                    else
+                        if(gob.getres().basename().contains("body"))
+                        gameui().syslog.append(String.format("Enemy Player, %s, ip %d - %d", tt.t, ip, oip), combatLogOpClr);
+                    else
+                            gameui().syslog.append(String.format("Enemy :%s, %s, ip %d - %d",gob.getres().basename(), tt.t, ip, oip), combatLogOpClr);
                 }
-            }
+            } catch (Loading | NullPointerException l) { }
         }
     }
-
     public void use(Indir<Resource> act) {
         lastact = act;
         lastuse = Utils.rtime();
+        if(lastact != null)
+            if(lastact.get().basename().contains("cleave") && Config.cleavesound) {
+            try{
+                Audio.play(Resource.local().loadwait(Config.cleavesfx), Config.cleavesoundvol);
+            }catch(Exception e){}//ignore because a crash here would prob get someone killed
+            }
         if (lastact != null && Config.logcombatactions) {
             try {
                 Resource res = lastact.get();
                 Resource.Tooltip tt = res.layer(Resource.tooltip);
+                ttretain = tt.t;
                 if (tt == null) {
                     gameui().syslog.append("Combat: WARNING! tooltip is missing for " + res.name + ". Notify Jorb/Loftar about this.", combatLogMeClr);
                     return;
                 }
                 String cd = Utils.fmt1DecPlace(atkct - lastuse);
-                gameui().syslog.append(String.format("me: %s, ip %d - %d, cd %ss", tt.t, current.ip, current.oip, cd), combatLogMeClr);
+                double cdadvantage = checkcd(cd,tt);
+                unarmed = getUnarmed();
+                if(cdadvantage != 0.0)
+                    gameui().syslog.append(String.format("me: %s, ip %d - %d, cd %ss, Agi Delta %s", tt.t, current.ip, current.oip, cd,cdadvantage), combatLogMeClr);
+                else
+                    gameui().syslog.append(String.format("me: %s, ip %d - %d, cd %ss", tt.t, current.ip, current.oip, cd), combatLogMeClr);
             } catch (Loading l) {
             }
         }
+    }
+    private int getUnarmed(){
+        CharWnd chrwdg = null;
+        int unarmedcombat = 0;
+        try {
+            chrwdg = ((GameUI) parent.parent).chrwdg;
+        } catch (Exception e) { // fail silently
+        }
+        if(chrwdg != null){
+            for (CharWnd.SAttr attr : chrwdg.skill) {
+                if(attr.attr.nm.contains("unarmed")){
+                unarmedcombat = attr.attr.comp;
+                }
+            }
+        }
+        return unarmedcombat;
+    }
+    private Double checkcd(String cd, Resource.Tooltip tt){
+        double base;
+        if(tt.t.contains("Flex"))
+        base = 1.8;
+        else
+            if(tt.t.contains("Knocks"))
+                base = 2.7;
+        else
+            if(tt.t.contains("Teeth"))
+                base = 2.1;
+        else
+            return 0.0;
+
+        double converted = Double.parseDouble(cd);
+        double finalcd = converted - base;
+        finalcd = finalcd / base * 100;
+        if(finalcd < -16.0)
+            finalcd = 100;
+        else
+        if(finalcd > -16.0 && finalcd <= -10.0)
+            finalcd = 75;
+        else
+        if(finalcd > -10.0 && finalcd <= -6.0)
+            finalcd = 50;
+        else
+        if(finalcd > -6.0 && finalcd <= -4.0)
+            finalcd = 25;
+        else
+        if(finalcd > -1.0 && finalcd <= 1.0)
+            finalcd = 0;
+        else
+        if(finalcd > 16.0)
+            finalcd = -100;
+        else
+        if(finalcd < 16.0 && finalcd >= 10.0)
+            finalcd = -75;
+        else
+        if(finalcd < 10.0 && finalcd >= 6.0)
+            finalcd = -50;
+        else
+        if(finalcd < 6.0 && finalcd >= 4.0)
+            finalcd = -25;
+
+        return finalcd;
     }
 
     @RName("frv")
@@ -201,16 +297,18 @@ public class Fightview extends Widget {
             if (rel == current) {
                 rel.show(false);
                 continue;
-            }
+           }
             g.image(bg, new Coord(x, y));
             rel.ava.c = new Coord(x + 25, ((bg.sz().y - rel.ava.sz.y) / 2) + y);
             rel.give.c = new Coord(x + 5, 4 + y);
             rel.purs.c = new Coord(rel.ava.c.x + rel.ava.sz.x + 5, 4 + y);
+
             rel.show(true);
             y += bg.sz().y + ymarg;
         }
         super.draw(g);
     }
+
 
     public static class Notfound extends RuntimeException {
         public final long id;
@@ -293,6 +391,7 @@ public class Fightview extends Widget {
             rel.give((Integer) args[1]);
             rel.ip = (Integer) args[2];
             rel.oip = (Integer) args[3];
+            if (rel != current)
             return;
         } else if(msg == "used") {
             use((args[0] == null)?null:ui.sess.getres((Integer)args[0]));

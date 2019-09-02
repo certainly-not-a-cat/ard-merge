@@ -28,8 +28,8 @@ package haven;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
-import java.util.*;
 import java.text.Collator;
+import java.util.*;
 
 public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private List<Buddy> buddies = new ArrayList<Buddy>();
@@ -38,7 +38,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private Button sbalpha;
     private Button sbgroup;
     private Button sbstatus;
-    private TextEntry pname, charpass, opass, search;
+    private TextEntry pname, charpass, opass;
+    public TextEntry search;
+    private Buddy editing = null;
+    private TextEntry nicksel;
+    private GroupSelector grpsel;
     private FlowerMenu menu;
     private BuddyInfo info = null;
     private Widget infof;
@@ -59,7 +63,6 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private Comparator<Buddy> bcmp;
     private Comparator<Buddy> alphacmp = new Comparator<Buddy>() {
         private Collator c = Collator.getInstance();
-
         public int compare(Buddy a, Buddy b) {
             return (c.compare(a.name, b.name));
         }
@@ -128,30 +131,35 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
             wdgmsg("grp", id, grp);
         }
 
-        public Text rname() {
-            if ((rname == null) || !rname.text.equals(name))
-                rname = Text.render(name);
-            return (rname);
-        }
+	private void chstatus(int status) {
+	    online = status;
+	    GameUI gui = getparent(GameUI.class);
+	    if(gui != null) {
+		if(status == 1)
+		    gui.msg(String.format("%s is now online.", name));
+	    }
+	}
 
-        private void chstatus(int status) {
-            online = status;
-        }
+	public Text rname() {
+	    if((rname == null) || !rname.text.equals(name))
+		rname = Text.render(name);
+	    return(rname);
+	}
 
-        public Map<String, Runnable> opts() {
-            Map<String, Runnable> opts = new LinkedHashMap<>();
-            if(online >= 0) {
-                opts.put("Chat", this::chat);
-                if(online == 1)
-                    opts.put("Invite", this::invite);
-                opts.put("End kinship", this::endkin);
-            } else {
-                opts.put("Forget", this::forget);
-            }
-            if(seen)
-                opts.put("Describe", this::describe);
-            return(opts);
-        }
+	public Map<String, Runnable> opts() {
+	    Map<String, Runnable> opts = new LinkedHashMap<>();
+	    if(online >= 0) {
+		opts.put("Chat", this::chat);
+		if(online == 1)
+		    opts.put("Invite", this::invite);
+		opts.put("End kinship", this::endkin);
+	    } else {
+		opts.put("Forget", this::forget);
+	    }
+	    if(seen)
+		opts.put("Describe", this::describe);
+	    return(opts);
+	}
     }
 
     public Iterator<Buddy> iterator() {
@@ -203,115 +211,115 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     }
 
     private class BuddyInfo extends Widget {
-        private final Buddy buddy;
-        private final Avaview ava;
-        private final TextEntry nick;
-        private final GroupSelector grp;
-        private long atime, utime;
-        private Label atimel = null;
-        private Button[] opts = {};
+	private final Buddy buddy;
+	private final Avaview ava;
+	private final TextEntry nick;
+	private final GroupSelector grp;
+	private long atime, utime;
+	private Label atimel = null;
+	private Button[] opts = {};
 
-        private BuddyInfo(Coord sz, Buddy buddy) {
-            super(sz);
-            this.buddy = buddy;
-            this.ava = adda(new Avaview(Avaview.dasz, -1, "avacam"), sz.x / 2, 10, 0.5, 0);
-            this.nick = add(new TextEntry(sz.x - 20, buddy.name) {
-                {dshow = true;}
-                public void activate(String text) {
-                    buddy.chname(text);
-                    commit();
-                }
-            }, 10, ava.c.y + ava.sz.y + 10);
-            this.grp = add(new GroupSelector(buddy.group) {
-                public void changed(int group) {
-                    buddy.chgrp(group);
-                }
-            }, 15, nick.c.y + nick.sz.y + 10);
-            setopts();
-        }
+	private BuddyInfo(Coord sz, Buddy buddy) {
+	    super(sz);
+	    this.buddy = buddy;
+	    this.ava = adda(new Avaview(Avaview.dasz, -1, "avacam"), sz.x / 2, 10, 0.5, 0);
+	    this.nick = add(new TextEntry(sz.x - 20, buddy.name) {
+		    {dshow = true;}
+		    public void activate(String text) {
+			buddy.chname(text);
+			commit();
+		    }
+		}, 10, ava.c.y + ava.sz.y + 10);
+	    this.grp = add(new GroupSelector(buddy.group) {
+		    public void changed(int group) {
+			buddy.chgrp(group);
+		    }
+		}, 15, nick.c.y + nick.sz.y + 10);
+	    setopts();
+	}
 
-        public void draw(GOut g) {
-            g.chcolor(0, 0, 0, 128);
-            g.frect(Coord.z, sz);
-            g.chcolor();
-            super.draw(g);
-        }
+	public void draw(GOut g) {
+	    g.chcolor(0, 0, 0, 128);
+	    g.frect(Coord.z, sz);
+	    g.chcolor();
+	    super.draw(g);
+	}
 
-        public void tick(double dt) {
-            if((utime != 0) && (Utils.ntime() >= utime))
-                setatime();
-        }
+	public void tick(double dt) {
+	    if((utime != 0) && (Utils.ntime() >= utime))
+		setatime();
+	}
 
-        private void setatime() {
-            String text;
-            if(buddy.online == 1) {
-                this.utime = 0;
-                text = "Last seen: Now";
-            } else {
-                int au, atime = (int)((long)Utils.ntime() - this.atime);
-                String unit;
-                if(atime >= (604800 * 2)) {
-                    au = 604800;
-                    unit = "week";
-                } else if(atime >= 86400) {
-                    au = 86400;
-                    unit = "day";
-                } else if(atime >= 3600) {
-                    au = 3600;
-                    unit = "hour";
-                } else if(atime >= 60) {
-                    au = 60;
-                    unit = "minute";
-                } else {
-                    au = 1;
-                    unit = "second";
-                }
-                int am = atime / au;
-                this.utime = this.atime + ((am + 1) * au);
-                text = "Last seen: " + am + " " + unit + ((am > 1)?"s":"") + " ago";
-            }
-            if(atimel != null)
-                ui.destroy(atimel);
-            atimel = add(new Label(text), 10, grp.c.y + grp.sz.y + 10);
-        }
+	private void setatime() {
+	    String text;
+	    if(buddy.online == 1) {
+		this.utime = 0;
+		text = "Last seen: Now";
+	    } else {
+		int au, atime = (int)((long)Utils.ntime() - this.atime);
+		String unit;
+		if(atime >= (604800 * 2)) {
+		    au = 604800;
+		    unit = "week";
+		} else if(atime >= 86400) {
+		    au = 86400;
+		    unit = "day";
+		} else if(atime >= 3600) {
+		    au = 3600;
+		    unit = "hour";
+		} else if(atime >= 60) {
+		    au = 60;
+		    unit = "minute";
+		} else {
+		    au = 1;
+		    unit = "second";
+		}
+		int am = atime / au;
+		this.utime = this.atime + ((am + 1) * au);
+		text = "Last seen: " + am + " " + unit + ((am > 1)?"s":"") + " ago";
+	    }
+	    if(atimel != null)
+		ui.destroy(atimel);
+	    atimel = add(new Label(text), 10, grp.c.y + grp.sz.y + 10);
+	}
 
-        private void setopts() {
-            for(Button opt : this.opts)
-                ui.destroy(opt);
-            Map<String, Runnable> bopts = buddy.opts();
-            List<Button> opts = new ArrayList<>(bopts.size());
-            int y = grp.c.y + grp.sz.y + 35;
-            for(Map.Entry<String, Runnable> opt : bopts.entrySet()) {
-                Button btn = add(new Button(sz.x - 20, opt.getKey(), false, opt.getValue()), 10, y);
-                y = btn.c.y + btn.sz.y + 5;
-                opts.add(btn);
-            }
-            this.opts = opts.toArray(new Button[0]);
-        }
+	private void setopts() {
+	    for(Button opt : this.opts)
+		ui.destroy(opt);
+	    Map<String, Runnable> bopts = buddy.opts();
+	    List<Button> opts = new ArrayList<>(bopts.size());
+	    int y = grp.c.y + grp.sz.y + 35;
+	    for(Map.Entry<String, Runnable> opt : bopts.entrySet()) {
+		Button btn = add(new Button(sz.x - 20, opt.getKey(), false, opt.getValue()), 10, y);
+		y = btn.c.y + btn.sz.y + 5;
+		opts.add(btn);
+	    }
+	    this.opts = opts.toArray(new Button[0]);
+	}
 
-        public void uimsg(String msg, Object... args) {
-            if(msg == "i-ava") {
-                Composited.Desc desc = Composited.Desc.decode(ui.sess, (Object[])args[0]);
-                Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[1]);
-                ava.pop(desc, map);
-            } else if(msg == "i-atime") {
-                atime = (long)Utils.ntime() - ((Number)args[0]).longValue();
-                setatime();
-            } else {
-                super.uimsg(msg, args);
-            }
-        }
+	public void uimsg(String msg, Object... args) {
+	    if(msg == "i-ava") {
+		Composited.Desc desc = Composited.Desc.decode(ui.sess, (Object[])args[0]);
+		Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[1]);
+		ava.pop(desc, map);
+	    } else if(msg == "i-atime") {
+		atime = (long)Utils.ntime() - ((Number)args[0]).longValue();
+		setatime();
+	    } else {
+		super.uimsg(msg, args);
+	    }
+	}
 
-        public void update() {
-            nick.settext(buddy.name);
-            nick.commit();
-            grp.group = buddy.group;
-            setatime();
-            setopts();
-        }
+	public void update() {
+	    nick.settext(buddy.name);
+	    nick.commit();
+	    grp.group = buddy.group;
+	    setatime();
+	    setopts();
+	}
     }
 
-    private class BuddyList extends Searchbox<Buddy> {
+    private class BuddyList extends Listbox<Buddy> {
         public String filter;
 
         public BuddyList(int w, int h) {
@@ -346,7 +354,6 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
             }
             return num;
         }
-        public boolean searchmatch(int idx, String txt) {return(buddies.get(idx).name.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
 
         protected void drawbg(GOut g) {
             g.chcolor(0, 0, 0, 128);
@@ -355,11 +362,6 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
         }
 
         public void drawitem(GOut g, Buddy b, int idx) {
-            if(soughtitem(idx)) {
-                g.chcolor(255, 255, 0, 32);
-                g.frect(Coord.z, g.sz);
-                g.chcolor();
-            }
             if (b.online == 1)
                 g.image(online, Coord.z);
             else if (b.online == 0)
@@ -376,27 +378,73 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
         }
 
         public void change(Buddy b) {
-            if(b == null) {
+          //  sel = b;
+            if (b == null) {
                 BuddyWnd.this.wdgmsg("ch", (Object)null);
+             //   if (editing != null) {
+               //     editing = null;
+               //    ui.destroy(nicksel);
+                //    ui.destroy(grpsel);
+              //  }
             } else {
                 BuddyWnd.this.wdgmsg("ch", b.id);
+             /*   if (editing == null) {
+                    BuddyWnd.this.add(nicksel = new TextEntry(190, "") {
+                        {
+                            dshow = true;
+                        }
+
+                        public void activate(String text) {
+                            editing.chname(text);
+                            commit();
+                        }
+                    }, new Coord(5, 185));
+                    BuddyWnd.this.adda(grpsel = new GroupSelector(0) {
+                        public void changed(int group) {
+                            editing.chgrp(group);
+                        }
+                    }, new Coord(100, 210), 0.5, 0);
+                    BuddyWnd.this.setfocus(nicksel);
+                }
+                editing = b;
+                nicksel.settext(b.name);
+                nicksel.buf.point = nicksel.buf.line.length();
+                nicksel.commit();
+                grpsel.group = b.group;*/
             }
         }
 
         public void opts(final Buddy b, Coord c) {
-            if(menu == null) {
-                Map<String, Runnable> bopts = b.opts();
-                menu = new FlowerMenu(bopts.keySet().toArray(new String[0])) {
+            List<String> opts = new ArrayList<String>();
+            if (b.online >= 0) {
+                opts.add("Chat");
+                if (b.online == 1)
+                    opts.add("Invite");
+                opts.add("End kinship");
+            } else {
+                opts.add("Forget");
+            }
+            if (b.seen)
+                opts.add("Describe");
+            if (menu == null) {
+                menu = new FlowerMenu(opts.toArray(new String[0])) {
                     public void destroy() {
                         menu = null;
                         super.destroy();
                     }
 
                     public void choose(Petal opt) {
-                        if(opt != null) {
-                            Runnable act = bopts.get(opt.name);
-                            if(act != null)
-                                act.run();
+                        if (opt != null) {
+                            if (opt.name.equals("End kinship"))
+                                b.endkin();
+                            else if (opt.name.equals("Chat"))
+                                b.chat();
+                            else if (opt.name.equals("Invite"))
+                                b.invite();
+                            else if (opt.name.equals("Forget"))
+                                b.forget();
+                            else if (opt.name.equals("Describe"))
+                                b.describe();
                             uimsg("act", opt.num);
                         } else {
                             uimsg("cancel");
@@ -436,28 +484,14 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 
         bl = add(new BuddyList(width - Window.wbox.bisz().x, 7), new Coord(Window.wbox.btloff().x, y));
         Frame.around(this, Collections.singletonList(bl));
-        y += 150;
+        y += 195;
 
         add(new Label("Sort by:"), new Coord(0, y));
         y += 15;
-
         int sbw = (width - 20) / 3;
-
-        sbstatus = add(new Button(sbw, "Status") {
-            public void click() {
-                setcmp(statuscmp);
-            }
-        }, new Coord(0, y));
-        sbgroup = add(new Button(sbw, "Group") {
-            public void click() {
-                setcmp(groupcmp);
-            }
-        }, new Coord(sbw + 10, y));
-        sbalpha = add(new Button(sbw, "Name") {
-            public void click() {
-                setcmp(alphacmp);
-            }
-        }, new Coord(width - sbw, y));
+        sbstatus = add(new Button(sbw, "Status") {public void click() { setcmp(statuscmp); }}, new Coord(0, y));
+        sbgroup = add(new Button(sbw, "Group") {public void click() { setcmp(groupcmp); }}, new Coord(sbw + 10, y));
+        sbalpha = add(new Button(sbw, "Name") {public void click() { setcmp(alphacmp); }}, new Coord(width - sbw, y));
         String sort = Utils.getpref("buddysort", "");
         if (sort.equals("")) {
             bcmp = statuscmp;
@@ -490,30 +524,14 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
         add(new Label("My hearth secret:"), new Coord(0, y));
         y += 15;
         charpass = add(new TextEntry(width, "") {
-            {
-                dshow = true;
-            }
-
+            { dshow = true; }
             public void activate(String text) {
                 setpwd(text);
-            }
-        }, new Coord(0, y));
+            }}, new Coord(0, y));
         y += 25;
-        add(new Button(sbw, "Set") {
-            public void click() {
-                setpwd(charpass.text);
-            }
-        }, new Coord(0, y));
-        add(new Button(sbw, "Clear") {
-            public void click() {
-                setpwd("");
-            }
-        }, new Coord(sbw + 10, y));
-        add(new Button(sbw, "Random") {
-            public void click() {
-                setpwd(randpwd());
-            }
-        }, new Coord(width - sbw, y));
+        add(new Button(sbw, "Set") {public void click() { setpwd(charpass.text); }}, new Coord(0, y));
+        add(new Button(sbw, "Clear") {public void click() { setpwd(""); }}, new Coord(sbw + 10, y));
+        add(new Button(sbw, "Random") {public void click() { setpwd(randpwd()); }}, new Coord(width - sbw, y));
         y += 35;
 
         add(new Label("Make kin by hearth secret:"), new Coord(0, y));
@@ -590,14 +608,20 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
                     idmap.remove(id);
                 }
             }
+            if (b == editing) {
+                editing = null;
+                ui.destroy(nicksel);
+                ui.destroy(grpsel);
+            }
             serial++;
         } else if (msg == "chst") {
             int id = (Integer) args[0];
             int online = (Integer) args[1];
+            find(id).online = online;
             Buddy b = find(id);
-            b.chstatus(online);
-            if ((info != null) && (info.buddy == b))
-                info.update();
+            b.online = online;
+            if(Config.autosortkinlist)
+                setcmp(statuscmp);
             if (Config.notifykinonline)
                 gameui().msg(b.name + " is " + (online > 0 ? "ONLINE" : "offline"), new Color(54, 105, 205));
         } else if (msg == "upd") {
@@ -613,6 +637,12 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
                 b.group = grp;
                 b.seen = seen;
             }
+            if (b == editing) {
+                nicksel.settext(b.name);
+                grpsel.group = b.group;
+            }
+            if((info != null) && (info.buddy == b))
+                info.update();
             serial++;
         } else if (msg == "sel") {
             int id = (Integer) args[0];

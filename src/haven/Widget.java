@@ -26,11 +26,27 @@
 
 package haven;
 
-import java.util.*;
-import java.lang.annotation.*;
-import java.lang.reflect.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.Stack;
+import java.util.TreeMap;
+import haven.MovableWidget;
+
+import static haven.MovableWidget.VISIBLE_PER;
 
 public class Widget {
     public UI ui;
@@ -89,9 +105,7 @@ public class Widget {
                         ch.resize(sz);
                 }
 
-                public void added() {
-                    presize();
-                }
+		    public void added() {presize();}
 
                 public void addchild(Widget child, Object... args) {
                     if ((args[0] instanceof String) && args[0].equals("fill")) {
@@ -250,6 +264,15 @@ public class Widget {
             ch.attached();
     }
 
+
+    public <T extends Widget> T add(T child, Coord c) {
+        if (child instanceof AltBeltWnd)    // FIXME. this is ugly
+            child.c = Utils.getprefc(((AltBeltWnd) child).origcap + "_c", c);
+         else
+            child.c = c;
+        return (add(child));
+    }
+
     private <T extends Widget> T add0(T child) {
         if ((child.ui == null) && (this.ui != null))
             ((Widget) child).attach(this.ui);
@@ -273,16 +296,10 @@ public class Widget {
         }
     }
 
-    public <T extends Widget> T add(T child, Coord c) {
-        if (child instanceof Window) {
-            child.c = Utils.getprefc(((Window) child).origcap + "_c", c);
-        } else if (child instanceof BeltWnd) {   // FIXME. this is ugly
-            child.c = Utils.getprefc(((BeltWnd) child).origcap + "_c", c);
-        } else {
-            child.c = c;
-        }
-        return (add(child));
-    }
+  //  public <T extends Widget> T add(T child, Coord c) {
+    //        child.c = c;
+    //    return (add(child));
+  //  }
 
     public <T extends Widget> T add(T child, int x, int y) {
         return (add(child, new Coord(x, y)));
@@ -300,7 +317,28 @@ public class Widget {
         return (adda(child, (int) (sz.x * ax), (int) (sz.y * ay), ax, ay));
     }
 
-    protected void added() {
+    protected void added() {}
+    protected void binded() {}
+    protected void removed() {}
+
+    public Coord2d relpos() {
+        return new Coord2d(c.x/(double)parent.sz.x,
+		c.y/(double)parent.sz.y);
+    }
+
+    public void setPosRel(final Coord2d rel) {
+        c = new Coord((int)(rel.x * parent.sz.x),
+		(int)(rel.y * parent.sz.y));
+	if( (c.x + sz.x * VISIBLE_PER) > parent.sz.x) {
+	    c.x = parent.sz.x - sz.x;
+	} else if((c.x + (sz.x * VISIBLE_PER)) < 0) {
+	    c.x = 0;
+	}
+	if((c.y + sz.y * VISIBLE_PER) > parent.sz.y) {
+	    c.y = parent.sz.y - sz.y;
+	} else if((c.y + (sz.y * VISIBLE_PER)) < 0) {
+	    c.y = 0;
+	}
     }
 
     public static class RelposError extends RuntimeException {
@@ -324,99 +362,99 @@ public class Widget {
         int i = 0;
         Stack<Object> st = new Stack<Object>();
         try {
-            while(i < spec.length()) {
-                char op = spec.charAt(i++);
-                if(Character.isDigit(op)) {
-                    int e;
-                    for(e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++);
-                    st.push(Integer.parseInt(spec.substring(i - 1, e)));
-                    i = e;
-                } else if(op == '!') {
-                    st.push(args[off++]);
-                } else if(op == '$') {
-                    st.push(self);
-                } else if(op == '@') {
-                    st.push(this);
-                } else if(op == '_') {
-                    st.push(st.peek());
-                } else if(op == '.') {
-                    st.pop();
-                } else if(op == '^') {
-                    Object a = st.pop();
-                    Object b = st.pop();
-                    st.push(a);
-                    st.push(b);
-                } else if(op == 'c') {
-                    int y = (Integer)st.pop();
-                    int x = (Integer)st.pop();
-                    st.push(new Coord(x, y));
-                } else if(op == 'o') {
-                    Widget w = (Widget)st.pop();
-                    st.push(w.c.add(w.sz));
-                } else if(op == 'p') {
-                    st.push(((Widget)st.pop()).c);
-                } else if(op == 'P') {
-                    Widget parent = (Widget)st.pop();
-                    st.push(((Widget)st.pop()).parentpos(parent));
-                } else if(op == 's') {
-                    st.push(((Widget)st.pop()).sz);
-                } else if(op == 'w') {
-                    synchronized(ui) {
-                        st.push(ui.widgets.get((Integer)st.pop()));
-                    }
-                } else if(op == 'x') {
-                    st.push(((Coord)st.pop()).x);
-                } else if(op == 'y') {
-                    st.push(((Coord)st.pop()).y);
-                } else if(op == '+') {
-                    Object b = st.pop();
-                    Object a = st.pop();
-                    if((a instanceof Integer) && (b instanceof Integer)) {
-                        st.push((Integer)a + (Integer)b);
-                    } else if((a instanceof Coord) && (b instanceof Coord)) {
-                        st.push(((Coord)a).add((Coord)b));
-                    } else {
-                        throw(new RuntimeException("Invalid addition operands: " + a + " + " + b));
-                    }
-                } else if(op == '-') {
-                    Object b = st.pop();
-                    Object a = st.pop();
-                    if((a instanceof Integer) && (b instanceof Integer)) {
-                        st.push((Integer)a - (Integer)b);
-                    } else if((a instanceof Coord) && (b instanceof Coord)) {
-                        st.push(((Coord)a).sub((Coord)b));
-                    } else {
-                        throw(new RuntimeException("Invalid subtraction operands: " + a + " - " + b));
-                    }
-                } else if(op == '*') {
-                    Object b = st.pop();
-                    Object a = st.pop();
-                    if((a instanceof Integer) && (b instanceof Integer)) {
-                        st.push((Integer)a * (Integer)b);
-                    } else if((a instanceof Coord) && (b instanceof Integer)) {
-                        st.push(((Coord)a).mul((Integer)b));
-                    } else if((a instanceof Coord) && (b instanceof Coord)) {
-                        st.push(((Coord)a).mul((Coord)b));
-                    } else {
-                        throw(new RuntimeException("Invalid multiplication operands: " + a + " - " + b));
-                    }
-                } else if(op == '/') {
-                    Object b = st.pop();
-                    Object a = st.pop();
-                    if((a instanceof Integer) && (b instanceof Integer)) {
-                        st.push((Integer)a / (Integer)b);
-                    } else if((a instanceof Coord) && (b instanceof Integer)) {
-                        st.push(((Coord)a).div((Integer)b));
-                    } else if((a instanceof Coord) && (b instanceof Coord)) {
-                        st.push(((Coord)a).div((Coord)b));
-                    } else {
-                        throw(new RuntimeException("Invalid division operands: " + a + " - " + b));
-                    }
-                } else if(Character.isWhitespace(op)) {
-                } else {
-                    throw(new RuntimeException("Unknown position operation: " + op));
+        while (i < spec.length()) {
+            char op = spec.charAt(i++);
+            if (Character.isDigit(op)) {
+                int e;
+                for (e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++) ;
+                st.push(Integer.parseInt(spec.substring(i - 1, e)));
+                i = e;
+            } else if (op == '!') {
+                st.push(args[off++]);
+            } else if (op == '$') {
+                st.push(self);
+            } else if(op == '@') {
+                st.push(this);
+            } else if (op == '_') {
+                st.push(st.peek());
+            } else if (op == '.') {
+                st.pop();
+            } else if (op == '^') {
+                Object a = st.pop();
+                Object b = st.pop();
+                st.push(a);
+                st.push(b);
+            } else if (op == 'c') {
+                int y = (Integer) st.pop();
+                int x = (Integer) st.pop();
+                st.push(new Coord(x, y));
+            } else if (op == 'o') {
+                Widget w = (Widget) st.pop();
+                st.push(w.c.add(w.sz));
+            } else if (op == 'p') {
+                st.push(((Widget) st.pop()).c);
+            } else if(op == 'P') {
+                Widget parent = (Widget)st.pop();
+                st.push(((Widget)st.pop()).parentpos(parent));
+            } else if (op == 's') {
+                st.push(((Widget) st.pop()).sz);
+            } else if (op == 'w') {
+                synchronized (ui) {
+                    st.push(ui.widgets.get((Integer) st.pop()));
                 }
+            } else if (op == 'x') {
+                st.push(((Coord) st.pop()).x);
+            } else if (op == 'y') {
+                st.push(((Coord) st.pop()).y);
+            } else if (op == '+') {
+                Object b = st.pop();
+                Object a = st.pop();
+                if ((a instanceof Integer) && (b instanceof Integer)) {
+                    st.push((Integer) a + (Integer) b);
+                } else if ((a instanceof Coord) && (b instanceof Coord)) {
+                    st.push(((Coord) a).add((Coord) b));
+                } else {
+                    throw (new RuntimeException("Invalid addition operands: " + a + " + " + b));
+                }
+            } else if (op == '-') {
+                Object b = st.pop();
+                Object a = st.pop();
+                if ((a instanceof Integer) && (b instanceof Integer)) {
+                    st.push((Integer) a - (Integer) b);
+                } else if ((a instanceof Coord) && (b instanceof Coord)) {
+                    st.push(((Coord) a).sub((Coord) b));
+                } else {
+                    throw (new RuntimeException("Invalid subtraction operands: " + a + " - " + b));
+                }
+            } else if (op == '*') {
+                Object b = st.pop();
+                Object a = st.pop();
+                if ((a instanceof Integer) && (b instanceof Integer)) {
+                    st.push((Integer) a * (Integer) b);
+                } else if ((a instanceof Coord) && (b instanceof Integer)) {
+                    st.push(((Coord) a).mul((Integer) b));
+                } else if ((a instanceof Coord) && (b instanceof Coord)) {
+                    st.push(((Coord) a).mul((Coord) b));
+                } else {
+                    throw (new RuntimeException("Invalid multiplication operands: " + a + " - " + b));
+                }
+            } else if (op == '/') {
+                Object b = st.pop();
+                Object a = st.pop();
+                if ((a instanceof Integer) && (b instanceof Integer)) {
+                    st.push((Integer) a / (Integer) b);
+                } else if ((a instanceof Coord) && (b instanceof Integer)) {
+                    st.push(((Coord) a).div((Integer) b));
+                } else if ((a instanceof Coord) && (b instanceof Coord)) {
+                    st.push(((Coord) a).div((Coord) b));
+                } else {
+                    throw (new RuntimeException("Invalid division operands: " + a + " - " + b));
+                }
+            } else if (Character.isWhitespace(op)) {
+            } else {
+                throw (new RuntimeException("Unknown position operation: " + op));
             }
+        }
         } catch(RuntimeException e) {
             throw(new RelposError(e, spec, i, st));
         }
@@ -473,7 +511,7 @@ public class Widget {
     public Coord parentpos(Widget in) {
         if (in == this)
             return (new Coord(0, 0));
-        return (xlate(parent.parentpos(in).add(c), true));
+	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
     public Coord rootpos() {
@@ -631,8 +669,8 @@ public class Widget {
                 Widget w = ui.widgets.get(tid);
                 if(w != null) {
                     if(w.canfocus)
-                        setfocus(w);
-                }
+                    setfocus(w);
+            }
             }
         } else if (msg == "curs") {
             if (args.length == 0)
@@ -675,6 +713,17 @@ public class Widget {
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
+
+    	if(!sender.toString().contains("Changer") && msg.equals("click") && args.length>=5 && (int)args[3]==1) {
+            //   System.out.println("shift right click detected");
+            try {
+                CheckListboxItem itm = Config.disableshiftclick.get(ui.sess.glob.oc.getgob(Long.valueOf((int) args[5])).getres().basename());
+                if (itm != null && itm.selected)
+                    return;
+            } catch (NullPointerException fucknulls) {//do nothing because fuck nulls}
+                }
+        }
+
         if (parent == null)
             ui.wdgmsg(sender, msg, args);
         else
@@ -890,6 +939,18 @@ public class Widget {
             }
         }
         return (false);
+    }
+
+   public boolean mouseclick(Coord c, int button, int count) {
+        for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+            if(!wdg.visible)
+                continue;
+            Coord cc = xlate(wdg.c, true);
+            if(c.isect(cc, wdg.sz))
+                if(wdg.mouseclick(c.add(cc.inv()), button, count))
+                    return(true);
+        }
+        return(false);
     }
 
     public Area area() {

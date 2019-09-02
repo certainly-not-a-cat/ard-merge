@@ -1,11 +1,11 @@
 package haven.factories;
 
+import java.awt.image.BufferedImage;
+
 import haven.ItemInfo;
 import haven.Resource;
 import haven.RichText;
 import haven.Text;
-
-import java.awt.image.BufferedImage;
 
 public class SeamarriageFactory implements ItemInfo.InfoFactory {
     public SeamarriageFactory() {

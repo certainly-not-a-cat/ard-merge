@@ -26,6 +26,9 @@
 
 package haven;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -40,11 +43,15 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.prefs.Preferences;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Utils {
     public static final java.nio.charset.Charset utf8 = java.nio.charset.Charset.forName("UTF-8");
@@ -84,6 +91,11 @@ public class Utils {
         java.awt.FontMetrics m = g.getFontMetrics();
         g.drawString(text, c.x, c.y + m.getAscent());
         return (m.getHeight());
+    }
+
+    public static String stream2str(InputStream is) {
+        Scanner s = new Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     static Coord textsz(Graphics g, String text) {
@@ -259,7 +271,7 @@ public class Utils {
         }
     }
 
-    static void loadprefchklist(String prefname, Map<String, CheckListboxItem> data) {
+    public static void loadprefchklist(String prefname, Map<String, CheckListboxItem> data) {
         try {
             String jsonstr = Utils.getpref(prefname, null);
             if (jsonstr == null)
@@ -278,7 +290,7 @@ public class Utils {
         }
     }
 
-    static void setprefchklst(String prefname, Map<String, CheckListboxItem> val) {
+    public static void setprefchklst(String prefname, Map<String, CheckListboxItem> val) {
         try {
             String jsonarr = "";
             Iterator it = val.entrySet().iterator();
@@ -294,6 +306,60 @@ public class Utils {
         } catch (SecurityException e) {
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+    @SuppressWarnings("SynchronizeOnNonFinalField")
+    public static void  saveCurioList() {
+        synchronized (Config.curioslist) {
+            Gson gson = (new GsonBuilder()).create();
+            Config.saveFile("curiolist.json", gson.toJson(Config.curioslist));
+        }
+    }
+
+    public static void loadCurioList() {
+        String json = Config.loadFile("curiolist.json");
+        if(json != null){
+            try {
+                Gson gson = (new GsonBuilder()).create();
+                Type collectionType = new TypeToken<HashMap<String, Boolean>>(){}.getType();
+                Config.curioslist = gson.fromJson(json, collectionType);
+            }catch(Exception ignored){ }
+        }
+        if(Config.curioslist == null){
+            Config.curioslist = new HashMap<>();
+            Config.curioslist.put("Chiming Bluebell", false);
+        }
+    }
+
+    @SuppressWarnings("SynchronizeOnNonFinalField")
+    public static void  saveAutodropList() {
+        synchronized (Config.autodroplist) {
+            Gson gson = (new GsonBuilder()).create();
+            Config.saveFile("autodroplist.json", gson.toJson(Config.autodroplist));
+        }
+    }
+
+    public static void loadAutodropList() {
+        String json = Config.loadFile("autodroplist.json");
+        if(json != null){
+            try {
+                Gson gson = (new GsonBuilder()).create();
+                Type collectionType = new TypeToken<HashMap<String, Boolean>>(){}.getType();
+                Config.autodroplist = gson.fromJson(json, collectionType);
+            }catch(Exception ignored){ }
+        }
+        if(Config.autodroplist == null){
+            Config.autodroplist = new HashMap<>();
+            Config.autodroplist.put("Intestines", false);
+            Config.autodroplist.put("Bone Material", false);
+            Config.autodroplist.put("Cat Gold", false);
+            Config.autodroplist.put("Strange Crystal", false);
+            Config.autodroplist.put("Petrified Seashell", false);
+            Config.autodroplist.put("Coal", false);
+            Config.autodroplist.put("Soil", false);
+            Config.autodroplist.put("Entrails", false);
+            Config.autodroplist.put("Cattail Head", false);
+            Config.autodroplist.put("Cattail Roots", false);
         }
     }
 
@@ -352,7 +418,7 @@ public class Utils {
         }
     }
 
-    static void setprefd(String prefname, double val) {
+    public static void setprefd(String prefname, double val) {
         try {
             prefs().putDouble(prefname, val);
         } catch (SecurityException e) {
@@ -995,6 +1061,25 @@ public class Utils {
                 ((col & 0x000f) >> 0) * 17));
     }
 
+    public static BufferedImage hconcat(final BufferedImage... imgs) {
+        int width = 0;
+        int height = 0;
+        for(final BufferedImage img : imgs) {
+            width += img.getWidth();
+            height = Math.max(height, img.getHeight());
+	}
+
+        final BufferedImage img = TexI.mkbuf(new Coord(width, height));
+        final Graphics g = img.createGraphics();
+        int x = 0;
+        for(final BufferedImage i : imgs) {
+            g.drawImage(i, x, 0, null);
+            x += i.getWidth();
+	}
+        g.dispose();
+        return img;
+    }
+
     public static BufferedImage outline(BufferedImage img, Color col) {
         Coord sz = imgsz(img).add(2, 2);
         BufferedImage ol = TexI.mkbuf(sz);
@@ -1022,6 +1107,10 @@ public class Utils {
     }
 
     public static BufferedImage outline2(BufferedImage img, Color col) {
+        return outline2(img, col, false);
+    }
+
+    public static BufferedImage outline2(BufferedImage img, Color col, boolean thick) {
         BufferedImage ol = outline(img, col);
         Graphics g = ol.getGraphics();
         g.drawImage(img, 1, 1, null);
@@ -1673,41 +1762,41 @@ public class Utils {
     }
 
     public static <E> Iterator<E> filter(Iterator<E> from, Predicate<E> filter) {
-        return(new Iterator<E>() {
-            boolean h = false;
-            E n;
+	return(new Iterator<E>() {
+		boolean h = false;
+		E n;
 
-            public boolean hasNext() {
-                while(!h) {
-                    if(!from.hasNext())
-                        return(false);
-                    E g = from.next();
-                    if(filter.test(g)) {
-                        n = g;
-                        h = true;
-                        break;
-                    }
-                }
-                return(true);
-            }
+		public boolean hasNext() {
+		    while(!h) {
+			if(!from.hasNext())
+			    return(false);
+			E g = from.next();
+			if(filter.test(g)) {
+			    n = g;
+			    h = true;
+			    break;
+			}
+		    }
+		    return(true);
+		}
 
-            public E next() {
-                if(!hasNext())
-                    throw(new NoSuchElementException());
-                E ret = n;
-                h = false;
-                n = null;
-                return(ret);
-            }
+		public E next() {
+		    if(!hasNext())
+			throw(new NoSuchElementException());
+		    E ret = n;
+		    h = false;
+		    n = null;
+		    return(ret);
+		}
 
-            public void remove() {
-                from.remove();
-            }
-        });
+		public void remove() {
+		    from.remove();
+		}
+	    });
     }
 
     public static <T, F> Iterator<T> filter(Iterator<F> from, Class<T> filter) {
-        return(map(filter(from, filter::isInstance), filter::cast));
+	return(map(filter(from, filter::isInstance), filter::cast));
     }
 
     public static <E, T extends Collection<E>> T merge(T dst, Iterable<? extends E> a, Iterable<? extends E> b, Comparator<? super E> cmp) {
@@ -1829,5 +1918,19 @@ public class Utils {
         } catch (NumberFormatException e) {
         }
         return null;
+    }
+
+    public static double round(double a, int order){
+        double o = Math.pow(10, order);
+        return Math.round(o * a) / o;
+    }
+    
+    public static String timeLeft(long at) {
+		long t = at - System.currentTimeMillis();
+		if (t<0) return "Finishing...";
+		long hours = t / 3600000;
+		long mins = t / 60000 % 60;
+		long seconds = t / 1000 % 60;
+		return String.format("%02d:%02d:%02d",hours,mins,seconds);
     }
 }

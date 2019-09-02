@@ -26,11 +26,17 @@
 
 package haven;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.text.Format;
 
 public class Text {
     // Following block of fonts and foundries should not be removed even if unused,
@@ -47,7 +53,9 @@ public class Text {
     public static final Foundry num10Fnd;
     public static final Foundry num11Fnd;
     public static final Foundry num12boldFnd;
+    public static final Foundry num20Fnd;
     public static final Foundry delfnd;
+    public static final Foundry delfnd2;
     public static final Foundry slotFnd;
     public static final Foundry attrf;
     public final static FontSettings cfg;
@@ -123,6 +131,7 @@ public class Text {
         serif = new Font(Text.cfg.font.get("serif"), Font.PLAIN, 12);
         mono = new Font("Monospace", Font.PLAIN, 12);
         fraktur = Resource.local().loadwait("ui/fraktur").layer(Resource.Font.class).font;
+        num20Fnd = new Foundry(serif, 20);
 
         latin = new Font("Dialog", Font.PLAIN, 10);
         num10Fnd = new Foundry(latin);
@@ -130,7 +139,7 @@ public class Text {
         num12boldFnd = new Text.Foundry(latin.deriveFont(Font.BOLD), 12).aa(true);
 
         delfnd = new Text.Foundry(latin.deriveFont(Font.BOLD), 16);
-
+        delfnd2 = new Text.Foundry(serif.deriveFont(Font.BOLD), 18);
         std = new Foundry(sans, Text.cfg.def);
         labelFnd = new Foundry(sans, Text.cfg.label);
 
@@ -309,6 +318,10 @@ public class Text {
         public Line render(String text) {
             return (render(text, defcol));
         }
+
+    }
+    public static Line renderstroked(String text) {
+        return renderstroked(text, Color.WHITE, Color.BLACK);
     }
 
     public static abstract class Imager extends Furnace {
@@ -334,20 +347,16 @@ public class Text {
             this.fnd = fnd;
         }
 
-        protected Text render(String text) {
-            return(fnd.render(text));
-        }
-
         protected String text(T value) {
             return (String.valueOf(value));
         }
-
+        protected Text render(String text) {return(fnd.render(text));}
         protected abstract T value();
 
         public Text get() {
             T value = value();
             if (!Utils.eq(value, cv))
-                cur = render(text(cv = value));
+                cur = fnd.render(text(cv = value));
             return (cur);
         }
 

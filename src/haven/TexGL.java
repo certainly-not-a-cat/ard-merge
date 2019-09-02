@@ -26,12 +26,16 @@
 
 package haven;
 
-import haven.glsl.*;
-
-import java.util.*;
-import javax.media.opengl.*;
-
 import static haven.GOut.checkerr;
+
+import java.util.Collection;
+
+import javax.media.opengl.GL;
+import javax.media.opengl.GL2;
+
+import haven.glsl.ShaderMacro;
+import haven.glsl.Tex2D;
+import haven.glsl.Varying;
 
 public abstract class TexGL extends Tex {
     public static boolean disableall = false;

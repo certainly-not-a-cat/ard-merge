@@ -26,13 +26,34 @@
 
 package haven.resutil;
 
-import haven.*;
-import haven.glsl.*;
+import static haven.glsl.Cons.add;
+import static haven.glsl.Cons.l;
+import static haven.glsl.Cons.mul;
+import static haven.glsl.Cons.neg;
+import static haven.glsl.Cons.reflect;
+import static haven.glsl.Cons.textureCube;
+import static haven.glsl.Cons.vec4;
+import static haven.glsl.Type.MAT3;
+import static haven.glsl.Type.SAMPLERCUBE;
+import static haven.glsl.Type.VEC3;
+
 import java.awt.Color;
-import javax.media.opengl.*;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
-import static haven.glsl.Type.*;
+
+import javax.media.opengl.GL;
+
+import haven.BGL;
+import haven.GLState;
+import haven.GOut;
+import haven.Material;
+import haven.PView;
+import haven.Resource;
+import haven.TexCube;
+import haven.glsl.Expression;
+import haven.glsl.Macro1;
+import haven.glsl.MiscLib;
+import haven.glsl.ProgramContext;
+import haven.glsl.ShaderMacro;
+import haven.glsl.Uniform;
 
 @Material.ResName("envref")
 public class EnvMap extends GLState {
@@ -56,16 +77,35 @@ public class EnvMap extends GLState {
 	this((Color)args[0]);
     }
 
-    private static final ShaderMacro shader = prog -> {
-	prog.dump = true;
-	prog.fctx.fragcol.mod(in -> {
-		return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
-								   reflect(MiscLib.fragedir(prog.fctx).depref(),
-									   MiscLib.frageyen(prog.fctx).depref())))),
-				   vec4(ccol.ref(), l(0.0)))));
-	    }, 90);
+/*
+    private static final ShaderMacro[] shaders = {
+	new ShaderMacro() {
+	    public void modify(final ProgramContext prog) {
+		prog.dump = true;
+		prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			public Expression expand(Expression in) {
+			    return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
+									       reflect(MiscLib.fragedir(prog.fctx).depref(),
+										       MiscLib.frageyen(prog.fctx).depref())))),
+					       vec4(ccol.ref(), l(0.0)))));
+			}
+		    }, 90);
+	    };
+	}
+	*/
+
+	    private static final ShaderMacro shader = prog -> {
+		prog.dump = true;
+		prog.fctx.fragcol.mod(in -> {
+			return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
+									   reflect(MiscLib.fragedir(prog.fctx).depref(),
+										   MiscLib.frageyen(prog.fctx).depref())))),
+					   vec4(ccol.ref(), l(0.0)))));
+		    }, 90);
+
     };
 
+    // public ShaderMacro[] shaders() {return(shaders);}
     public ShaderMacro shader() {return(shader);}
     public boolean reqshader() {return(true);}
 

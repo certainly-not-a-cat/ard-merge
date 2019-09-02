@@ -91,9 +91,9 @@ public class FColor {
 
     public int hashCode() {
         return (((((((Float.floatToIntBits(r)) * 31) +
-                Float.floatToIntBits(g)) * 31) +
-                Float.floatToIntBits(b)) * 31) +
-                Float.floatToIntBits(a));
+		   Float.floatToIntBits(g)) * 31) +
+		 Float.floatToIntBits(b)) * 31) +
+	       Float.floatToIntBits(a));
     }
 
     public boolean equals(Object o) {

@@ -1,6 +1,12 @@
 package haven.automation;
 
-import haven.*;
+import haven.Equipory;
+import haven.GameUI;
+import haven.IMeter;
+import haven.Inventory;
+import haven.Loading;
+import haven.WItem;
+import haven.Widget;
 
 
 public class Utils {

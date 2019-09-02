@@ -26,12 +26,16 @@
 
 package haven;
 
-import haven.res.ui.tt.Armor;
-
-import java.awt.*;
-import java.util.*;
-
 import static haven.Inventory.invsq;
+
+import java.awt.Color;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+
+import haven.res.ui.tt.Armor;
 
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
@@ -39,6 +43,8 @@ public class Equipory extends Widget implements DTarget {
     private static final int acx = 34 + bg.sz().x / 2;
     private static final Text.Foundry acf = new Text.Foundry(Text.sans, Text.cfg.def).aa(true);
     private Tex armorclass = null;
+    private Tex percexp = null;
+    private List <GItem> checkForDrop = new LinkedList<GItem>();
     public static final Coord ecoords[] = {
             new Coord(0, 0),
             new Coord(rx, 0),
@@ -70,19 +76,22 @@ public class Equipory extends Widget implements DTarget {
             if (ec.y + invsq.sz().y > isz.y)
                 isz.y = ec.y + invsq.sz().y;
         }
-        for(int i = 0; i < ebgs.length; i++) {
+        for (int i = 0; i < ebgs.length; i++) {
             Resource bgres = Resource.local().loadwait("gfx/hud/equip/ep" + i);
             Resource.Image img = bgres.layer(Resource.imgc);
-            if(img != null) {
+            if (img != null) {
                 ebgs[i] = bgres.layer(Resource.imgc).tex();
                 etts[i] = Text.render(bgres.layer(Resource.tooltip).t);
             }
         }
     }
 
+
     Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
     private final Avaview ava;
+    AttrBonusesWdg bonuses;
     public WItem[] quickslots = new WItem[ecoords.length];
+    WItem[] slots = new WItem[ecoords.length];
 
     @RName("epry")
     public static class $_ implements Factory {
@@ -127,11 +136,13 @@ public class Equipory extends Widget implements DTarget {
             }
         }, new Coord(34, 0));
         ava.color = null;
+        bonuses = add(new AttrBonusesWdg(isz.y), isz.x + 5, 0);
+        pack();
     }
 
     @Override
     public void tick(double dt) {
-        if (Config.quickbelt && ui.beltWndId == -1 && ((Window) parent).origcap.equals("Equipment")) {
+        if (Config.quickbelt && ui.beltWndId == -1 && ((Window) parent).cap.toString().equals("Equipment")) {
             for (WItem itm[] : wmap.values()) {
                 try {
                     if (itm.length > 0 && itm[0].item.res.get().name.endsWith("belt"))
@@ -141,49 +152,80 @@ public class Equipory extends Widget implements DTarget {
             }
         }
         super.tick(dt);
+        try {
+    	    if (!checkForDrop.isEmpty()) {
+    		GItem g = checkForDrop.get(0);
+    		if (g.resource().name.equals("gfx/invobjs/leech")) {
+    			 g.drop = true;
+    			//ui.gui.map.wdgmsg("drop", Coord.z);
+    		}
+    		checkForDrop.remove(0);
+    	    }
+    	} catch (Resource.Loading ignore) {
     }
-
+    }
     public static interface SlotInfo {
-        public int slots();
+	public int slots();
     }
 
     public void addchild(Widget child, Object... args) {
-        if (child instanceof GItem) {
+	if(child instanceof GItem) {
             add(child);
-            GItem g = (GItem) child;
+	    GItem g = (GItem)child;
             WItem[] v = new WItem[args.length];
-            for (int i = 0; i < args.length; i++) {
-                int ep = (Integer) args[i];
-                v[i] = quickslots[ep] = add(new WItem(g), ecoords[ep].add(1, 1));
+	    for(int i = 0; i < args.length; i++) {
+		int ep = (Integer)args[i];
+		v[i] = quickslots[ep] = slots[ep]  = add(new WItem(g), ecoords[ep].add(1, 1));
+		//v[i] = add(new WItem(g), ecoords[ep].add(1, 1));
+	    	//slots[ep] = v[i];
+	    	//quickslots[ep] = v[i];
             }
+	    g.sendttupdate = true;
             wmap.put(g, v);
-
+            if(Config.leechdrop)
+            	checkForDrop.add(g);
             if (armorclass != null) {
                 armorclass.dispose();
                 armorclass = null;
             }
+        if (percexp != null) {
+            percexp.dispose();
+            percexp = null;
+        }
         } else {
             super.addchild(child, args);
         }
     }
-
+    @Override
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+	if (sender  instanceof GItem && wmap.containsKey(sender) && msg.equals("ttupdate")) {
+	    bonuses.update(slots);
+	} else {
+	    super.wdgmsg(sender, msg, args);
+	}
+    }
     public void cdestroy(Widget w) {
         super.cdestroy(w);
-        if (w instanceof GItem) {
-            GItem i = (GItem) w;
-            for (WItem v : wmap.remove(i)) {
+	if(w instanceof GItem) {
+	    GItem i = (GItem)w;
+	    for(WItem v : wmap.remove(i)) {
                 ui.destroy(v);
-                for (int qsi = 0; qsi < ecoords.length; qsi++) {
-                    if (quickslots[qsi] == v) {
-                        quickslots[qsi] = null;
-                        break;
-                    }
+		for(int s = 0; s < slots.length; s++) {
+		    if(slots[s] == v)
+			slots[s] = null;
+		    if(quickslots[s] == v)
+		        quickslots[s] = null;
                 }
             }
-            if (armorclass != null) {
-                armorclass.dispose();
-                armorclass = null;
-            }
+        if (armorclass != null) {
+            armorclass.dispose();
+            armorclass = null;
+        }
+        if (percexp != null) {
+            percexp.dispose();
+            percexp = null;
+        }
+	    bonuses.update(slots);
         }
     }
 
@@ -196,55 +238,54 @@ public class Equipory extends Widget implements DTarget {
     }
 
     public int epat(Coord c) {
-        for (int i = 0; i < ecoords.length; i++) {
-            if (c.isect(ecoords[i], invsq.sz()))
-                return (i);
+	for(int i = 0; i < ecoords.length; i++) {
+	    if(c.isect(ecoords[i], invsq.sz()))
+		return(i);
         }
-        return (-1);
+	return(-1);
     }
 
     public boolean drop(Coord cc, Coord ul) {
         wdgmsg("drop", epat(cc));
-        return (true);
+	return(true);
     }
 
     public void drawslots(GOut g) {
         int slots = 0;
         GameUI gui = getparent(GameUI.class);
-        if ((gui != null) && (gui.vhand != null)) {
+	if((gui != null) && (gui.vhand != null)) {
             try {
                 SlotInfo si = ItemInfo.find(SlotInfo.class, gui.vhand.item.info());
-                if (si != null)
+		if(si != null)
                     slots = si.slots();
-            } catch (Loading l) {
+	    } catch(Loading l) {
             }
         }
-        for (int i = 0; i < 16; i++) {
-            if ((slots & (1 << i)) != 0) {
+	for(int i = 0; i < 16; i++) {
+	    if((slots & (1 << i)) != 0) {
                 g.chcolor(255, 255, 0, 64);
                 g.frect(ecoords[i].add(1, 1), invsq.sz().sub(2, 2));
                 g.chcolor();
             }
             g.image(invsq, ecoords[i]);
-            if (ebgs[i] != null)
-                g.image(ebgs[i], ecoords[i]);
+	    if(ebgs[i] != null)
+		g.image(ebgs[i], ecoords[i]);
         }
     }
 
     public Object tooltip(Coord c, Widget prev) {
-        Object tt = super.tooltip(c, prev);
-        if (tt != null)
-            return (tt);
-        int sl = epat(c);
-        if (sl >= 0)
-            return (etts[sl]);
-        return (null);
-    }
+        	Object tt = super.tooltip(c, prev);
+        	if(tt != null)
+            	    return(tt);
+        	int sl = epat(c);
+        	if(sl >= 0)
+            	    return(etts[sl]);
+        	return(null);
+            }
 
     public void draw(GOut g) {
         drawslots(g);
         super.draw(g);
-
         if (armorclass == null) {
             int h = 0, s = 0;
             try {
@@ -266,6 +307,26 @@ public class Equipory extends Widget implements DTarget {
         }
         if (armorclass != null)
             g.image(armorclass, new Coord(acx - armorclass.sz().x / 2, bg.sz().y - armorclass.sz().y));
+        if (percexp == null) {
+            int h = 0, s = 0, x;
+            CharWnd chrwdg = null;
+            try {
+             //   chrwdg = ((GameUI) parent).chrwdg;
+                chrwdg = gameui().chrwdg;
+                for (CharWnd.Attr attr : chrwdg.base) {
+                   if (attr.attr.nm.contains("prc"))
+                            h = attr.attr.comp;
+                }
+                for (CharWnd.SAttr attr : chrwdg.skill)
+                    if(attr.attr.nm.contains("exp"))
+                        s = attr.attr.comp;
+                x = h * s;
+                percexp = Text.render(Resource.getLocString(Resource.BUNDLE_LABEL, "Perc*Exp: ") + x, Color.BLACK, acf).tex();
+            } catch (Exception e) { // fail silently
+            }
+        }
+        if (percexp != null)
+            g.image(percexp, new Coord(acx - percexp.sz().x / 2, bg.sz().y - percexp.sz().y - 10));
     }
 
     public boolean iteminteract(Coord cc, Coord ul) {

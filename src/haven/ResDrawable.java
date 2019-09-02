@@ -25,13 +25,12 @@
  */
 
 package haven;
-
-import java.awt.Color;
+import haven.sloth.gob.*;
 
 public class ResDrawable extends Drawable {
     public final Indir<Resource> res;
     public Sprite spr = null;
-    public MessageBuf sdt;
+    MessageBuf sdt;
     private int delay = 0;
 
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
@@ -53,10 +52,10 @@ public class ResDrawable extends Drawable {
             return;
         Resource res = this.res.get();
         if (gob.type == null)
-            gob.determineType(res.name);
+            gob.type = Type.getType(res.name);
 
         MessageBuf stdCopy = sdt.clone();
-        if (Config.bonsai && (gob.type == Gob.Type.TREE || gob.type == Gob.Type.BUSH) && !stdCopy.eom()) {
+        if (Config.bonsai && (gob.type == Type.TREE || gob.type == Type.BUSH) && !stdCopy.eom()) {
             byte[] args = new byte[2];
             args[0] = (byte)stdCopy.uint8();
             int fscale = 25;
@@ -80,6 +79,14 @@ public class ResDrawable extends Drawable {
             return;
         }
         rl.add(spr, null);
+    }
+
+    public int sdtnum() {
+	if(sdt != null) {
+	    Message csdt = sdt.clone();
+	    return csdt.eom() ? 0xffff000 : Sprite.decnum(csdt);
+	}
+	return 0;
     }
 
     public void ctick(int dt) {

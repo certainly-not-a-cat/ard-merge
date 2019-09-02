@@ -26,12 +26,21 @@
 
 package haven;
 
-import javax.media.opengl.*;
-import java.nio.*;
-import java.util.*;
-import java.util.function.*;
-import java.io.*;
-import java.lang.reflect.*;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.nio.Buffer;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import javax.media.opengl.GL2;
+import javax.media.opengl.GL3;
 
 public abstract class BGL {
     protected static abstract class Command {
@@ -1138,6 +1147,38 @@ public abstract class BGL {
             }
         });
     }
+    
+    public void glMultiTexCoord3f(int i, float f1, float f2, float f3) {
+        add(new Command() {
+            public void run(GL2 gl) {
+                gl.glMultiTexCoord3f(i, f1, f2, f3);
+            }
+        });
+    }
+    
+    public void glTexCoord3f(float f1, float f2, float f3) {
+    	add(new Command() {
+	        public void run(GL2 gl) {
+	            gl.glTexCoord3f(f1, f2, f3);
+	        }
+    	});
+    }
+    
+    public void glVertex4f(float f1, float f2, float f3, float f4) {
+    	add(new Command() {
+	        public void run(GL2 gl) {
+	            gl.glVertex4f(f1, f2, f3, f4);
+	        }
+    	});
+    }
+    
+    public void glTexEnvi(int i1, int i2, int i3) {
+    	add(new Command() {
+	        public void run(GL2 gl) {
+	            gl.glTexEnvi(i1, i2, i3);
+	        }
+    	});
+}
 
     public static class DebugMessage {
 	public final int source, type, severity, id;

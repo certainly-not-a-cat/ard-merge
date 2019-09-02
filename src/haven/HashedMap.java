@@ -26,7 +26,13 @@
 
 package haven;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class HashedMap<K, V> extends AbstractMap<K, V> {
     private static final Object NULL = new Object();

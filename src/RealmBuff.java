@@ -1,10 +1,23 @@
-import haven.*;
-import haven.ItemInfo.ResOwner;
-import haven.Resource.Pagina;
-
 import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.List;
+
+import haven.Buff;
+import haven.Coord;
+import haven.Glob;
+import haven.Indir;
+import haven.ItemInfo;
+import haven.ItemInfo.ResOwner;
+import haven.Loading;
+import haven.Resource;
+import haven.Resource.Pagina;
+import haven.RichText;
+import haven.Session;
+import haven.Tex;
+import haven.TexI;
+import haven.Text;
+import haven.UI;
+import haven.Widget;
 
 public class RealmBuff extends Buff implements ResOwner {
     public final Indir<Resource> res;

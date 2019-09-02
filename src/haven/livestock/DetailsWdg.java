@@ -1,21 +1,24 @@
 package haven.livestock;
 
 
-import haven.*;
-import haven.Label;
-
-import java.awt.*;
-import java.util.Map;
-
 import static haven.OCache.posres;
+
+import java.awt.Color;
+import java.util.List;
+import java.util.Map;
+import static haven.OCache.posres;
+
+import haven.*;
 
 public class DetailsWdg extends Widget {
     public final static int HEIGHT = 25;
     private final Coord sepStart = new Coord(0, HEIGHT);
     private final Coord sepEnd = new Coord(800 - 40 - 11, HEIGHT);
     public Animal animal;
+    private GameUI gui;
+    public Label del;
+    public Gob animal2;
     private boolean hover = false;
-
     public DetailsWdg(Animal animal) {
         this.animal = animal;
 
@@ -32,17 +35,17 @@ public class DetailsWdg extends Widget {
 
             String valStr = val.toString();
             if (key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Meat quality:")) ||
-                key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Milk quality:")) ||
-                key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Hide quality:")) ||
-                key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Wool quality:")) ||
-                key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Endurance:")))
+                    key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Milk quality:")) ||
+                    key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Hide quality:")) ||
+                    key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Wool quality:")) ||
+                    key.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Endurance:")))
                 valStr += "%";
 
             Label lbl = new Label(valStr, Text.labelFnd);
             add(lbl, new Coord(col.x + offx, 5));
         }
 
-        Label del = new Label("\u2718", Text.delfnd, Color.RED) {
+        del = new Label("\u2718", Text.delfnd, Color.RED) {
             @Override
             public boolean mousedown(Coord c, int button) {
                 delete();
@@ -72,10 +75,27 @@ public class DetailsWdg extends Widget {
     public boolean mousedown(Coord c, int button) {
         Gob gob = gameui().map.glob.oc.getgob(animal.gobid);
         if (gob != null) {
-            gob.delattr(GobHighlight.class);
-            gob.setattr(new GobHighlight(gob));
-            if (button == 3)
-                gameui().map.wdgmsg("click", gob.sc, gob.rc.floor(posres), 3, 0, 0, (int) gob.id, gob.rc.floor(posres), 0, -1);
+            if (button == 3) {
+                if (MapView.markedGobs.contains(gob.id)) {
+                    MapView.markedGobs.remove(gob.id);
+                    del.settext("\u2718");
+                    del.setcolor(Color.BLUE);
+                }
+                else {
+                    MapView.markedGobs.add(gob.id);
+                    del.settext("\u2620");
+                    del.setcolor(Color.RED);
+                }
+            }
+            //gameui().map.wdgmsg("click", gob.sc, gob.rc.floor(posres), 3, 0, 0, (int) gob.id, gob.rc.floor(posres), 0, -1);
+            if (button == 1) {
+                if(gob.isDead() == Boolean.TRUE){
+                    delete();
+                }
+                gob.delattr(GobHighlight.class);
+                gob.setattr(new GobHighlight(gob));
+            }
+
         }
         return super.mousedown(c, button);
     }
@@ -99,3 +119,5 @@ public class DetailsWdg extends Widget {
         ((Scrollport.Scrollcont) parent).update();
     }
 }
+
+

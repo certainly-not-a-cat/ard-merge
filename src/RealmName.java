@@ -1,13 +1,13 @@
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+
 import haven.ItemInfo;
 import haven.ItemInfo.InfoFactory;
+import haven.ItemInfo.Name;
 import haven.ItemInfo.Owner;
 import haven.PUtils;
 import haven.Resource;
 import haven.TexI;
-import haven.ItemInfo.Name;
-
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 
 public class RealmName implements InfoFactory {
     public RealmName() {

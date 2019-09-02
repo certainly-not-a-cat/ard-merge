@@ -1,12 +1,17 @@
 package haven.automation;
 
 
-import haven.*;
+import static haven.OCache.posres;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static haven.OCache.posres;
+import haven.Coord;
+import haven.Coord2d;
+import haven.GameUI;
+import haven.Gob;
+import haven.Loading;
+import haven.Resource;
 
 public class TrellisDestroy implements Runnable {
     private GameUI gui;

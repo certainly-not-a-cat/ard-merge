@@ -26,8 +26,12 @@
 
 package haven;
 
-import java.util.zip.*;
-import java.io.*;
+import java.io.Closeable;
+import java.io.Flushable;
+import java.io.IOException;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 public class ZMessage extends Message implements Closeable, Flushable {
     private Inflater zi = null;

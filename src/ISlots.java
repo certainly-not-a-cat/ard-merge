@@ -1,30 +1,28 @@
-import haven.*;
-import haven.GItem.NumberInfo;
-import haven.ItemInfo.Tip;
-
-import haven.CharWnd;
-import haven.Coord;
-import haven.GSprite;
-import haven.ItemInfo;
-import haven.PUtils;
-import haven.ResData;
-import haven.Resource;
-import haven.Text;
-import haven.Utils;
-
-import haven.GSprite.ImageSprite;
-import haven.res.lib.tspec.Spec;
-import haven.res.ui.tt.defn.DefName;
-
-import haven.Resource.Image;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.util.List;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+
+import haven.CharWnd;
+import haven.Coord;
+import haven.GItem.NumberInfo;
+import haven.GSprite;
+import haven.GSprite.ImageSprite;
+import haven.Glob;
+import haven.ItemInfo;
+import haven.ItemInfo.Tip;
+import haven.PUtils;
+import haven.ResData;
+import haven.Resource;
+import haven.Resource.Image;
+import haven.RichText;
+import haven.Text;
+import haven.Utils;
+import haven.res.lib.tspec.Spec;
+import haven.res.ui.tt.defn.DefName;
 
 
 public class ISlots extends Tip implements NumberInfo {
@@ -146,6 +144,7 @@ public class ISlots extends Tip implements NumberInfo {
             int var6 = var1.cmp.sz.y;
             var1.cmp.add(var2, new Coord(var5, var6));
             var1.cmp.add(var3, new Coord(var5 + 16 + 3, var6 + (16 - var3.getHeight()) / 2));
+            // var1.cmp.add(var4, new Coord(var5 + 16, var6 + 16));
             if (var4 != null) {
                 var1.cmp.add(var4, new Coord(var5 + 16, var6 + 16));
             }

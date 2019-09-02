@@ -26,27 +26,50 @@
 
 package haven;
 
-import java.io.*;
-import java.nio.charset.Charset;
+import haven.sloth.gob.Mark;
+
 import java.util.*;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
 import java.awt.image.BufferedImage;
-import java.text.*;
-import java.text.AttributedCharacterIterator.Attribute;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.URL;
-import java.util.regex.*;
-import java.awt.datatransfer.*;
+import java.nio.charset.Charset;
+import java.text.AttributedCharacterIterator;
+import java.text.AttributedCharacterIterator.Attribute;
+import java.text.CharacterIterator;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import haven.automation.Discord;
+import net.dv8tion.jda.core.entities.TextChannel;
+import static haven.MCache.tilesz;
 
 public class ChatUI extends Widget {
-    private static final Resource alarmsfx = Resource.local().loadwait("sfx/chatalarm");
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont((float)Config.fontsizechat)));
+    private static final Resource alarmsfx = Resource.local().loadwait("sfx/Ding");
+   // public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont((float)Config.fontsizechat)));
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont((float)Config.fontsizechat), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
-    private static final int brpw = 142, beltw = 410;
     public static final Coord marg = new Coord(9, 9);
     public static final Color[] urgcols = new Color[]{
             null,
@@ -57,11 +80,11 @@ public class ChatUI extends Widget {
     public Channel sel = null;
     public int urgency = 0;
     private final Selector chansel;
-    private Coord base = Coord.z;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
     public static final String CMD_PREFIX_HLIGHT = "@";
+
 
     public ChatUI(int w, int h) {
         super(new Coord(w, h));
@@ -73,9 +96,13 @@ public class ChatUI extends Widget {
     }
 
     protected void added() {
-        base = this.c;
         resize(this.sz);
     }
+
+
+
+
+
 
     public static class ChatAttribute extends Attribute {
         private ChatAttribute(String name) {
@@ -83,6 +110,7 @@ public class ChatUI extends Widget {
         }
 
         public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
+        public static final Attribute HEARTH_SECRET = new ChatAttribute("hearth-secret");
     }
 
     public static class FuckMeGentlyWithAChainsaw {
@@ -102,6 +130,7 @@ public class ChatUI extends Widget {
         public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
         public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
                 TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        private final Pattern hspat = Pattern.compile("\\bhs: ?([^ ]+)", Pattern.CASE_INSENSITIVE);
 
         public ChatParser(Object... args) {
             super(args);
@@ -111,40 +140,52 @@ public class ChatUI extends Widget {
             RichText.Part ret = null;
             int p = 0;
             while (true) {
-                Matcher m = urlpat.matcher(text);
-                if (!m.find(p))
-                    break;
-                URL url;
-                try {
-                    String su = text.substring(m.start(), m.end());
-                    if (su.indexOf(':') < 0)
-                        su = "http://" + su;
-                    url = new URL(su);
-                } catch (java.net.MalformedURLException e) {
+                Map<Attribute, Object> na = null;
+                Matcher m = hspat.matcher(text);
+                if (m.find(p)) {
+                    String hs = m.group(1);
+                    na = new HashMap<Attribute, Object>(attrs);
+                    na.putAll(urlstyle);
+                    na.put(ChatAttribute.HEARTH_SECRET, hs);
                     p = m.end();
-                    continue;
+                } else {
+                    m = urlpat.matcher(text);
+                    if (m.find(p)) {
+                        URL url;
+                        try {
+                            String su = text.substring(m.start(), m.end());
+                            if(su.indexOf(':') < 0)
+                                su = "http://" + su;
+                            url = new URL(su);
+                        } catch(java.net.MalformedURLException e) {
+                            p = m.end();
+                            continue;
+                        }
+                        na = new HashMap<Attribute, Object>(attrs);
+                        na.putAll(urlstyle);
+                        na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
+                        p = m.end();
+                    }
                 }
+                if (na == null)
+                    break;
                 RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
-                if (ret == null) ret = lead;
-                else ret.append(lead);
-                Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
-                na.putAll(urlstyle);
-                na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
+                if(ret == null) ret = lead; else ret.append(lead);
                 ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
-                p = m.end();
             }
-            if (ret == null)
+            if(ret == null)
                 ret = new RichText.TextPart(text, attrs);
             else
                 ret.append(new RichText.TextPart(text.substring(p), attrs));
-            return (ret);
+            return(ret);
         }
     }
+
 
     public static abstract class Channel extends Widget {
         public final List<Message> msgs = new LinkedList<Message>();
         private final Scrollbar sb;
-        public final IButton cb;
+	private final IButton cb;
         public int urgency = 0;
 
         public static abstract class Message {
@@ -412,11 +453,9 @@ public class ChatUI extends Widget {
                         dragging = true;
                     int o = poscmp.compare(selorig, ch);
                     if (o < 0) {
-                        selstart = selorig;
-                        selend = ch;
+			selstart = selorig; selend = ch;
                     } else if (o > 0) {
-                        selstart = ch;
-                        selend = selorig;
+			selstart = ch; selend = selorig;
                     } else {
                         selstart = selend = null;
                     }
@@ -487,8 +526,7 @@ public class ChatUI extends Widget {
                                     selstart = selend = null;
                             }
                         });
-            } catch (IllegalStateException e) {
-            }
+	    } catch(IllegalStateException e) {}
         }
 
         protected void clicked(CharPos pos) {
@@ -501,6 +539,11 @@ public class ChatUI extends Widget {
                 } catch (WebBrowser.BrowserException e) {
                     getparent(GameUI.class).error("Could not launch web browser.");
                 }
+            }
+            String hs = (String)inf.getAttribute(ChatAttribute.HEARTH_SECRET);
+            if (hs != null && gameui() != null && gameui().buddies != null) {
+            	gameui().buddies.show();
+            	gameui().buddies.wdgmsg("bypwd", hs);
             }
         }
 
@@ -593,9 +636,7 @@ public class ChatUI extends Widget {
             this.name = name;
         }
 
-        public String name() {
-            return (name);
-        }
+	public String name() {return(name);}
     }
 
     public static abstract class EntryChannel extends Channel {
@@ -648,12 +689,84 @@ public class ChatUI extends Widget {
             if (in != null) {
                 in.c = new Coord(0, this.sz.y - in.sz.y);
                 in.resize(this.sz.x);
+                in.redraw();
             }
         }
 
         public void send(String text) {
             history.add(text);
             wdgmsg("msg", text);
+            if(Config.discordchat && this.name().equals(Config.chatalert) && Discord.jdalogin!=null){
+                GameUI gui = gameui();
+                for(TextChannel loop:haven.automation.Discord.channels)
+                    if (loop.getName().equals(Config.discordchannel) && !Discord.discordmessage) {
+                        loop.sendMessage(gui.getparent(GameUI.class).buddies.getCharName() + ": " + text).queue();
+                    }else
+                        Discord.SwitchMessageFlag();
+            }
+        }
+    }
+
+    public static abstract class DiscordChannel extends Channel {
+        private final TextEntry in;
+        private List<String> history = new ArrayList<String>();
+        private int hpos = 0;
+        private String hcurrent;
+
+        public DiscordChannel(boolean closable) {
+            super(closable);
+            setfocusctl(true);
+            this.in = new TextEntry(0, "") {
+                public void activate(String text) {
+                    if (text.length() > 0)
+                        send(text);
+                    settext("");
+                    hpos = history.size();
+                }
+
+                public boolean keydown(KeyEvent ev) {
+                    if (ev.getKeyCode() == KeyEvent.VK_UP) {
+                        if (hpos > 0) {
+                            if (hpos == history.size())
+                                hcurrent = text;
+                            rsettext(history.get(--hpos));
+                        }
+                        return (true);
+                    } else if (ev.getKeyCode() == KeyEvent.VK_DOWN) {
+                        if (hpos < history.size()) {
+                            if (++hpos == history.size())
+                                rsettext(hcurrent);
+                            else
+                                rsettext(history.get(hpos));
+                        }
+                        return (true);
+                    } else {
+                        return (super.keydown(ev));
+                    }
+                }
+            };
+            add(this.in);
+        }
+
+        public int ih() {
+            return (sz.y - in.sz.y);
+        }
+
+        public void resize(Coord sz) {
+            super.resize(sz);
+            if (in != null) {
+                in.c = new Coord(0, this.sz.y - in.sz.y);
+                in.resize(this.sz.x);
+            }
+        }
+
+        public void send(String text) {
+            history.add(text);
+            GameUI gui = gameui();
+            for(TextChannel loop:haven.automation.Discord.channels)
+                if (this.name().equals(loop.getName())) {
+                    loop.sendMessage(gui.getparent(GameUI.class).buddies.getCharName() + ": " + text).queue();
+                }
         }
     }
 
@@ -762,6 +875,7 @@ public class ChatUI extends Widget {
                 Integer from = (Integer) args[0];
                 String line = (String) args[1];
 
+
                 if (name.equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Area Chat")) && line.startsWith(CMD_PREFIX_HLIGHT)) {
                     try {
                         long gobid = Long.parseLong(line.substring(1));
@@ -784,8 +898,16 @@ public class ChatUI extends Widget {
                 } else {
                     Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
                     append(cmsg);
-                    if (urgency > 0)
-                        notify(cmsg, urgency);
+                   // if (urgency > 0)
+                    notify(cmsg, 1);
+                    if(Config.discordchat && this.name().equals(Config.chatalert) && Discord.jdalogin!=null && !cmsg.text().text.contains(Discord.botname)&& !Discord.discordmessage) {
+                        for (TextChannel loop : haven.automation.Discord.channels) {
+                            if (loop.getName().equals(Config.discordchannel)) {
+                                loop.sendMessage(name + ": " + cmsg.text().text).queue();
+                            }
+                        }
+                    }
+                  //  notify(cmsg, urgency);
                     save(name, cmsg.text().text);
                 }
             } else {
@@ -798,11 +920,110 @@ public class ChatUI extends Widget {
         }
     }
 
+    public static class DiscordChat extends DiscordChannel {
+        public final int urgency;
+        protected final String name;
+        private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
+
+        public class NamedMessage extends Message {
+            public final int from;
+            public final String text;
+            public final int w;
+            public final Color col;
+            private String cn;
+            private Text r = null;
+
+            public NamedMessage(int from, String text, Color col, int w) {
+                this.from = from;
+                this.text = text;
+                this.w = w;
+                this.col = col;
+            }
+
+            public Text text() {
+                BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
+                String nm = (b == null) ? "???" : (b.name);
+                if ((r == null) || !nm.equals(cn)) {
+                    String tf = String.format("%s: %s", nm, text);
+                    r = fnd.render(RichText.Parser.quote(Config.chattimestamp ? timestamp(tf) : tf), w, TextAttribute.FOREGROUND, col);
+                    cn = nm;
+                }
+                return (r);
+            }
+
+            public Tex tex() {
+                return (text().tex());
+            }
+
+            public Coord sz() {
+                if (r == null)
+                    return (text().sz());
+                else
+                    return (r.sz());
+            }
+        }
+
+        public class MyMessage extends SimpleMessage {
+            public MyMessage(String text, int w) {
+                super(text, new Color(192, 192, 255), w);
+            }
+        }
+
+        public DiscordChat(boolean closable, String name, int urgency) {
+            super(closable);
+            this.name = name;
+            this.urgency = urgency;
+        }
+
+        private float colseq = 0;
+
+        private Color nextcol() {
+            return (new Color(Color.HSBtoRGB(colseq = ((colseq + (float) Math.sqrt(2)) % 1.0f), 0.5f, 1.0f)));
+        }
+
+        public Color fromcolor(int from) {
+            synchronized (pc) {
+                Color c = pc.get(from);
+                if (c == null)
+                    pc.put(from, c = nextcol());
+                return (c);
+            }
+        }
+
+        public void uimsg(String msg, Object... args) {
+            if (msg == "msg") {
+                Integer from = (Integer) args[0];
+                String line = (String) args[1];
+
+                if (from == null) {
+                    MyMessage my = new MyMessage(line, iw());
+                    append(my);
+                    save(name, my.text().text, super.getparent(GameUI.class).buddies.getCharName());
+                } else {
+                    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
+                    append(cmsg);
+                    // if (urgency > 0)
+                    notify(cmsg, 1);
+                    //  notify(cmsg, urgency);
+                    save(name, cmsg.text().text);
+                }
+            } else {
+                super.uimsg(msg, args);
+            }
+        }
+
+        public String name() {
+            return (name);
+        }
+    }
+
+
+
     public static class PartyChat extends MultiChat {
         private long lastmsg = 0;
 
         public PartyChat() {
-            super(false, Resource.getLocString(Resource.BUNDLE_LABEL, "Party"), 2);
+	    super(false, "Party", 2);
         }
 
         public void uimsg(String msg, Object... args) {
@@ -812,7 +1033,36 @@ public class ChatUI extends Widget {
                 String line = (String) args[2];
                 Color col = Color.WHITE;
 
-                synchronized (ui.sess.glob.party.memb) {
+		try {
+		    final Matcher match = Mark.CHAT_FMT_PAT.matcher(line);
+		    if(match.find()) {
+			final long gid = Long.parseLong(match.group(1));
+			final int life = Integer.parseInt(match.group(2));
+			final Gob g = ui.sess.glob.oc.getgob(gid);
+			if(g != null) {
+			    g.mark(life);
+			}
+			return;
+		    } else {
+		    	final Matcher tmatch = Mark.CHAT_TILE_FMT_PAT.matcher(line);
+		    	if(tmatch.find()) {
+			    final long gid = Long.parseLong(tmatch.group(1));
+			    final double offx = Double.parseDouble(tmatch.group(2));
+			    final double offy = Double.parseDouble(tmatch.group(3));
+			    ui.sess.glob.map.getgrido(gid).ifPresent(grid -> {
+			        final Coord2d mc = new Coord2d(grid.ul).add(offx, offy).mul(tilesz);
+				final Gob g = ui.sess.glob.oc.new ModdedGob(mc, 0);
+				g.addol(new Mark(20000));
+			    });
+			    return;
+			}
+		    }
+		} catch (Exception e) {
+		    e.printStackTrace();
+		    //Ignore any people trying to crash the client with this
+		}
+
+		synchronized(ui.sess.glob.party) {
                     Party.Member pm = ui.sess.glob.party.memb.get((long) gobid);
                     if (pm != null)
                         col = pm.col;
@@ -839,6 +1089,7 @@ public class ChatUI extends Widget {
             }
         }
     }
+
 
     public static class PrivChat extends EntryChannel {
         private final int other;
@@ -901,7 +1152,6 @@ public class ChatUI extends Widget {
                 return (b.name);
         }
     }
-
     @RName("schan")
     public static class $SChan implements Factory {
         public Widget create(UI ui, Object[] args) {
@@ -915,7 +1165,7 @@ public class ChatUI extends Widget {
         public Widget create(UI ui, Object[] args) {
             String name = (String) args[0];
             int urgency = (Integer) args[1];
-            return (new MultiChat(false, Resource.getLocString(Resource.BUNDLE_LABEL, name), urgency));
+	    return(new MultiChat(false, name, urgency));
         }
     }
 
@@ -1015,7 +1265,7 @@ public class ChatUI extends Widget {
                     if (ch.chan == sel)
                         g.image(chanseld, new Coord(0, y));
                     g.chcolor(255, 255, 255, 255);
-                    if ((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
+		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
                         ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
                     g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
                     g.image(chandiv, new Coord(0, y + 18));
@@ -1107,7 +1357,7 @@ public class ChatUI extends Widget {
         select(chan, true);
     }
 
-    private class Notification {
+    public class Notification {
         public final Channel chan;
         public final Text chnm;
         public final Channel.Message msg;
@@ -1117,6 +1367,23 @@ public class ChatUI extends Widget {
             this.chan = chan;
             this.msg = msg;
             this.chnm = chansel.nf[0].render(chan.name());
+try {
+    if(haven.automation.Discord.channels != null) {
+        for (TextChannel channel : haven.automation.Discord.channels) {
+            if (channel.getName().equals(chan.name())) {
+                if (Config.discordsounds) {
+                    Audio.play(notifsfx);
+                    break;
+                }
+            }
+        }
+    }
+}catch(NullPointerException discordnull){}
+
+            if(chan.name().equals(Resource.getLocString(Resource.BUNDLE_LABEL, Config.chatalert)) || chan.name().equals(Resource.getLocString(Resource.BUNDLE_LABEL, "Area Chat"))){
+                if(Config.chatsounds)
+                Audio.play(notifsfx);
+            }
         }
     }
 
@@ -1163,22 +1430,14 @@ public class ChatUI extends Widget {
     private static final Tex bcbd = Resource.loadtex("gfx/hud/chat-close-g");
 
     public void draw(GOut g) {
-        g.rimage(Window.bg, marg, sz.sub(marg.x * 2, marg.y));
         super.draw(g);
-        g.image(bulc, new Coord(0, 0));
-        g.image(burc, new Coord(sz.x - burc.sz().x, 0));
-        g.rimagev(bvlb, new Coord(0, bulc.sz().y), sz.y - bulc.sz().y);
-        g.rimagev(bvrb, new Coord(sz.x - bvrb.sz().x, burc.sz().y), sz.y - burc.sz().y);
-        g.rimageh(bhb, new Coord(bulc.sz().x, 0), sz.x - bulc.sz().x - burc.sz().x);
-        g.aimage(bmf, new Coord(sz.x / 2, 0), 0.5, 0);
-        if ((sel == null) || (sel.cb == null))
-            g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
     }
-
+    public static final Resource notifsfx = Resource.local().loadwait("sfx/hud/chat");
     public void notify(Channel chan, Channel.Message msg) {
         synchronized (notifs) {
             notifs.addFirst(new Notification(chan, msg));
         }
+       // Audio.play(notifsfx);
     }
 
     private class Spring extends NormAnim {
@@ -1201,8 +1460,6 @@ public class ChatUI extends Widget {
 
     public void resize(Coord sz) {
         super.resize(sz);
-        this.c = base.add(0, -this.sz.y);
-
         chansel.resize(new Coord(selw, this.sz.y - marg.y));
         if (sel != null)
             sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - sel.c.y));
@@ -1220,8 +1477,10 @@ public class ChatUI extends Widget {
         resize(sz.x, targeth = h);
     }
 
+    public void resize(int w) {
+	resize(new Coord(w, sz.y));
+    }
     public void move(Coord base) {
-        this.c = (this.base = base).add(0, -sz.y);
     }
 
     public void expand() {
@@ -1259,18 +1518,11 @@ public class ChatUI extends Widget {
 
     private UI.Grab dm = null;
     private Coord doff;
-    public int savedh = Math.max(111, Config.chatsz.y);
-
-    private boolean resizehoriz = false;
+    public int savedh = Math.max(111, Utils.getprefi("chatsize", 111));
 
     public boolean mousedown(Coord c, int button) {
         int bmfx = (sz.x - bmf.sz().x) / 2;
-        if (button == 1 && c.x > sz.x - 9) {
-            dm = ui.grabmouse(this);
-            doff = c;
-            resizehoriz = true;
-            return (true);
-        } else if ((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
+	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
             dm = ui.grabmouse(this);
             doff = c;
             return (true);
@@ -1281,15 +1533,7 @@ public class ChatUI extends Widget {
 
     public void mousemove(Coord c) {
         if (dm != null) {
-            if (resizehoriz) {
-                resize(Math.max(beltw, Math.min(parent.sz.x - brpw, sz.x + c.x - doff.x)), savedh);
-                doff = c;
-            } else {
                 resize(sz.x, savedh = Math.max(111, sz.y + doff.y - c.y));
-                GameUI gui = gameui();
-                if (gui.questpanel != null)
-                    gui.questpanel.c = new Coord(10, gui.sz.y - gui.chat.sz.y - gui.beltwdg.sz.y - gui.questpanel.sz.y - 10);
-            }
         } else {
             super.mousemove(c);
         }
@@ -1299,8 +1543,7 @@ public class ChatUI extends Widget {
         if (dm != null) {
             dm.remove();
             dm = null;
-            Utils.setprefc("chatsz", sz);
-            resizehoriz = false;
+	    Utils.setprefi("chatsize", savedh);
             return (true);
         } else {
             return (super.mouseup(c, button));

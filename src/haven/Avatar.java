@@ -26,7 +26,9 @@
 
 package haven;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Avatar extends GAttrib {
     public List<Indir<Resource>> layers = null;

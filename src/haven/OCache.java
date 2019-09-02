@@ -26,7 +26,14 @@
 
 package haven;
 
+
+import haven.purus.pbot.PBotUtils;
+import haven.sloth.gob.HeldBy;
+import haven.sloth.gob.Hidden;
+import haven.sloth.gob.Holding;
+
 import java.util.*;
+import java.util.List;
 
 public class OCache implements Iterable<Gob> {
     public static final int OD_REM = 0;
@@ -51,6 +58,7 @@ public class OCache implements Iterable<Gob> {
     public static final int OD_ICON = 19;
     public static final int OD_RESATTR = 20;
     public static final int OD_END = 255;
+   public GameUI gui = getGUI();
     public static final Coord2d posres = new Coord2d(0x1.0p-10, 0x1.0p-10).mul(11, 11);
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
@@ -60,6 +68,7 @@ public class OCache implements Iterable<Gob> {
     private Map<Long, DamageSprite> gobdmgs = new HashMap<Long, DamageSprite>();
     public boolean isfight = false;
     private final Collection<ChangeCallback> cbs = new WeakList<ChangeCallback>();
+
 
     public interface ChangeCallback {
         public void changed(Gob ob);
@@ -78,6 +87,25 @@ public class OCache implements Iterable<Gob> {
         ob.changed();
         for(ChangeCallback cb : cbs)
             cb.changed(ob);
+    }
+
+    synchronized void changeAllGobs() {
+        for(final Gob g : this) {
+            changed(g);
+        }
+    }
+
+    synchronized void refreshalloverlays(){
+        for(final Gob g: this){
+            if(g.ols.size() > 0)
+              g.ols.clear();
+        }
+    }
+
+    public class ModdedGob extends Virtual {
+        public ModdedGob(Coord2d c, double a) {
+            super(c, a);
+        }
     }
 
     public synchronized void remove(long id, int frame) {
@@ -120,10 +148,12 @@ public class OCache implements Iterable<Gob> {
                     if (isfight) {
                         DamageSprite dmgspr = gobdmgs.get(g.id);
                         if (dmgspr != null) {
-                            if (dmgspr.owner == g)
+                            if (dmgspr.owner == g) {
                                 g.ols.add(new Gob.Overlay(DamageSprite.ID, dmgspr));
-                            else
+                            }
+                            else {
                                 g.ols.add(new Gob.Overlay(DamageSprite.ID, new DamageSprite(dmgspr.dmg, dmgspr.arm, g)));
+                            }
                         }
                     }
                 }
@@ -222,6 +252,7 @@ public class OCache implements Iterable<Gob> {
         if ((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
             ((Gob.Overlay.CUpd) d.spr).update(sdt);
             d.sdt = sdt;
+            g.updsdt();
         } else if ((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
             g.setattr(new ResDrawable(g, res, sdt));
         }
@@ -327,7 +358,8 @@ public class OCache implements Iterable<Gob> {
 
     public synchronized void cmppose(Gob g, int pseq, List<ResData> poses, List<ResData> tposes, boolean interp, float ttime) {
         Composite cmp = (Composite) g.getattr(Drawable.class);
-        if (cmp != null && cmp.pseq != pseq) {
+        if (cmp != null) {
+            if (cmp.pseq != pseq) {
             cmp.pseq = pseq;
             if (poses != null)
                 cmp.chposes(poses, interp);
@@ -335,6 +367,7 @@ public class OCache implements Iterable<Gob> {
                 cmp.tposes(tposes, WrapMode.ONCE, ttime);
         }
         changed(g);
+    }
     }
 
     public void cmppose(Gob gob, Message msg) {
@@ -449,6 +482,14 @@ public class OCache implements Iterable<Gob> {
             cmpequ(gob, equ);
     }
 
+    synchronized void changeHealthGobs() {
+        for(Gob g : this) {
+            if(g.getattr(GobHealth.class) != null &&
+                    g.getattr(GobHealth.class).hp < 4)
+                changed(g);
+        }
+    }
+
     public synchronized void avatar(Gob g, List<Indir<Resource>> layers) {
         Avatar ava = g.getattr(Avatar.class);
         if (ava == null) {
@@ -508,6 +549,12 @@ public class OCache implements Iterable<Gob> {
     public synchronized void follow(Gob g, long oid, Indir<Resource> xfres, String xfname) {
         if (oid == 0xffffffffl) {
             g.delattr(Following.class);
+            final HeldBy heldby = g.getattr(HeldBy.class);
+            if (heldby != null) {
+                g.delattr(HeldBy.class);
+                g.updateHitmap();
+                heldby.holder.delattr(Holding.class);
+            }
         } else {
             Following flw = g.getattr(Following.class);
             if (flw == null) {
@@ -613,18 +660,34 @@ public class OCache implements Iterable<Gob> {
                     if (res != null && res.name.equals("gfx/fx/floatimg")) {
                         synchronized (gobdmgs) {
                             DamageSprite dmgspr = gobdmgs.get(g.id);
-                            if (dmgspr == null)
+                            if (dmgspr == null) {
+                                if(Config.logcombatactions) {
+                                    KinInfo kininfo = g.getattr(KinInfo.class);
+                                    if (g.isplayer())
+                                        PBotUtils.sysLogAppend("I got hit for " + dmg + " Damage.", "white");
+                                    else if (kininfo != null)
+                                        PBotUtils.sysLogAppend("Hit " + kininfo.name + " For " + dmg + " Damage.", "green");
+                                    else if (g.getres().basename().contains("Body"))
+                                        PBotUtils.sysLogAppend("Hit Unknown player For " + dmg + " Damage.", "green");
+                                    else
+                                        PBotUtils.sysLogAppend("Hit " + g.getres().basename() + " For " + dmg + " Damage.", "green");
+                                }
                                 gobdmgs.put(g.id, new DamageSprite(dmg, clr == 36751, g));
+                                }
                             else
                                 dmgspr.update(dmg, clr == 36751);
+                            }
                         }
-                    }
-                } catch (Loading le) {
+                    } catch (Loading le) {
                     Defer.later(this);
                 }
                 return null;
             }
         });
+    }
+    public GameUI getGUI()
+    {
+        return HavenPanel.lui.root.findchild(GameUI.class);
     }
 
     public void removedmgoverlay(long gobid) {
@@ -653,6 +716,39 @@ public class OCache implements Iterable<Gob> {
             overlay(gob, olid, prs, res, sdt);
     }
 
+
+    public synchronized void quality(Gob g,int quality){
+        g.setattr(new GobQuality(g,quality));
+
+        Gob.Overlay ol = g.findol(Sprite.GOB_QUALITY_ID);
+        if (quality > 0) {
+            if (ol == null)
+                g.addol(new Gob.Overlay(Sprite.GOB_QUALITY_ID, new GobQualitySprite(quality)));
+            else if (((GobQualitySprite) ol.spr).val != quality)
+                ((GobQualitySprite) ol.spr).update(quality);
+        } else {
+            if (ol != null)
+                g.ols.remove(ol);
+        }
+        changed(g);
+    }
+
+    public synchronized void customattr(Gob g, String attr, int life){
+        g.setattr(new GobCustomAttr(g, attr));
+
+        Gob.Overlay ol = g.findol(Sprite.GOB_CUSTOM_ID);
+        if (!attr.equals("")) {
+            if (ol == null)
+                g.addol(new Gob.Overlay(Sprite.GOB_CUSTOM_ID, new GobCustomSprite(attr, life)));
+            else if (!((GobCustomSprite) ol.spr).val.equals(attr))
+                ((GobCustomSprite) ol.spr).update(attr);
+        } else {
+            if (ol != null)
+                g.ols.remove(ol);
+        }
+        changed(g);
+    }
+
     public synchronized void health(Gob g, int hp) {
         g.setattr(new GobHealth(g, hp));
 
@@ -677,6 +773,67 @@ public class OCache implements Iterable<Gob> {
         if (gob != null)
             health(gob, hp);
     }
+
+    public synchronized void highlightGobs(final String gname) {
+        for(final Gob g : this) {
+            g.resname().ifPresent(name -> {
+                if(gname.equals(name)) {
+                    g.mark(-1);
+                }
+            });
+        }
+    }
+
+    public synchronized void unhighlightGobs(final String gname) {
+        for(final Gob g : this) {
+            g.resname().ifPresent(name -> {
+                if(gname.equals(name)) {
+                    g.unmark();
+                }
+            });
+        }
+    }
+
+    synchronized void hideAll(final String name) {
+        for(final Gob g : this) {
+            g.resname().ifPresent(gname -> {
+                if(gname.equals(name)) {
+                    g.setattr(new Hidden(g));
+                    changed(g);
+                }
+            });
+        }
+    }
+
+    public synchronized void unhideAll(final String name) {
+        for(final Gob g : this) {
+            g.resname().ifPresent(gname -> {
+                if(gname.equals(name)) {
+                    g.delattr(Hidden.class);
+                    changed(g);
+                }
+            });
+        }
+    }
+
+    synchronized void removeAll(final String name) {
+        //TODO: I2 iterator doesn't support remove and I should fix that later on, for now this is a two step process
+        final List<Long> rem = new ArrayList<>();
+        for(final Gob g : this) {
+            g.resname().ifPresent(gname -> {
+                if(gname.equals(name)) {
+                    g.dispose();
+                    rem.add(g.id);
+                }
+            });
+        }
+
+        for(long id : rem) {
+            remove(id);
+        }
+    }
+
+
 
     public synchronized void buddy(Gob g, String name, int group, int type) {
         if (name == null) {

@@ -1,9 +1,6 @@
 package haven;
 
-import haven.resutil.Ridges;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,6 +10,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import haven.resutil.Ridges;
 
 
 public class MapGridSave {

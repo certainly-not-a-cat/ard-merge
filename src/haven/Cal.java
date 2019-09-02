@@ -27,8 +27,6 @@
 package haven;
 
 import static java.lang.Math.PI;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 
 public class Cal extends Widget {
     public static final double hbr = 20;
@@ -40,13 +38,12 @@ public class Cal extends Widget {
     static final Resource.Anim sun = Resource.local().loadwait("gfx/hud/calendar/sun").layer(Resource.animc);
     static final Resource.Anim moon = Resource.local().loadwait("gfx/hud/calendar/moon").layer(Resource.animc);
 
-    static {
-	for(int i = 0; i < dlnd.length; i++) {
-	    dlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/dayscape-%d", i));
-	    nlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/nightscape-%d", i));
+	static {
+		for(int i = 0; i < dlnd.length; i++) {
+			dlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/dayscape-%d", i));
+			nlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/nightscape-%d", i));
+		}
 	}
-    }
-
     public Cal() {
 	super(bg.sz());
     }
@@ -60,6 +57,8 @@ public class Cal extends Widget {
 	Resource.Image sun = Cal.sun.f[(int)((now / Cal.sun.d) % Cal.sun.f.length)][0];
 	Coord mc = Coord.sc((a.dt + 0.25) * 2 * PI, hbr).add(sz.div(2)).sub(moon.sz.div(2));
 	Coord sc = Coord.sc((a.dt + 0.75) * 2 * PI, hbr).add(sz.div(2)).sub(sun.sz.div(2));
+	this.parent.ui.sess.glob.moonid = moon.id;
+	this.parent.ui.sess.glob.night = a.night;
 	g.chcolor(a.mc);
 	g.image(moon, mc);
 	g.chcolor();

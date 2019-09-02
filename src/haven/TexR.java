@@ -26,17 +26,17 @@
 
 package haven;
 
-import java.util.*;
 import java.awt.Graphics;
-import java.awt.image.*;
-import java.io.*;
-import javax.imageio.ImageIO;
-import java.awt.color.ColorSpace;
-import java.nio.ByteBuffer;
-import javax.media.opengl.*;
-import java.security.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-import haven.Defer.Future;
+import javax.imageio.ImageIO;
+import javax.media.opengl.GL;
 
 @Resource.LayerName("tex")
 public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {

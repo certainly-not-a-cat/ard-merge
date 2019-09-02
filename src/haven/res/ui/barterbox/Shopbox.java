@@ -1,19 +1,40 @@
 package haven.res.ui.barterbox;
 
-import haven.*;
-import haven.Button;
-import haven.GSprite.Owner;
-import haven.ItemInfo.SpriteOwner;
-import haven.Label;
-import haven.Resource.Image;
-import haven.Resource.Pagina;
-import haven.res.lib.tspec.Spec;
-import haven.res.ui.tt.q.qbuff.QBuff;
-
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Random;
+
+import haven.Button;
+import haven.Coord;
+import haven.GItem;
+import haven.GOut;
+import haven.GSprite;
+import haven.GSprite.Owner;
+import haven.Glob;
+import haven.Indir;
+import haven.Inventory;
+import haven.ItemInfo;
+import haven.ItemInfo.SpriteOwner;
+import haven.Label;
+import haven.Loading;
+import haven.Message;
+import haven.MessageBuf;
+import haven.ResData;
+import haven.Resource;
+import haven.Resource.Image;
+import haven.Resource.Pagina;
+import haven.RichText;
+import haven.Tex;
+import haven.TexI;
+import haven.Text;
+import haven.TextEntry;
+import haven.UI;
+import haven.Utils;
+import haven.WItem;
+import haven.Widget;
+import haven.res.lib.tspec.Spec;
+import haven.res.ui.tt.q.qbuff.QBuff;
 
 // ui/barterstand
 public class Shopbox extends Widget implements SpriteOwner, Owner {
@@ -241,7 +262,15 @@ public class Shopbox extends Widget implements SpriteOwner, Owner {
 
     public void wdgmsg(Widget var1, String var2, Object... var3) {
         if(var1 == this.bbtn) {
-            this.wdgmsg("buy", new Object[0]);
+            if(ui.modshift && !ui.modctrl) {
+                for (int i = 0; i <= 5; i++)
+                    this.wdgmsg("buy", new Object[0]);
+            }else if(ui.modshift && ui.modctrl) {
+                for (int i = 0; i <= 20; i++)
+                    this.wdgmsg("buy", new Object[0]);
+            }else {
+                this.wdgmsg("buy", new Object[0]);
+            }
         } else if(var1 == this.spipe) {
             this.wdgmsg("spipe", new Object[0]);
         } else if(var1 == this.bpipe) {
@@ -259,6 +288,7 @@ public class Shopbox extends Widget implements SpriteOwner, Owner {
         boolean var1 = this.price != null && this.pnum > 0;
         if (var1 && this.bbtn == null) {
             this.bbtn = (Button) this.add(new Button(75, "Buy"), buyc);
+            this.bbtn.tooltip = "Left click to buy 1, Shift left click to buy 5, ctrl shift left click to buy 20.";
         } else if (!var1 && this.bbtn != null) {
             this.bbtn.reqdestroy();
             this.bbtn = null;

@@ -26,9 +26,10 @@
 
 package haven;
 
-import java.util.*;
 import java.awt.Color;
 import java.awt.font.TextAttribute;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Textlog extends Widget {
     static Tex texpap = Resource.loadtex("gfx/hud/texpap");
@@ -38,6 +39,8 @@ public class Textlog extends Widget {
     List<Text> lines;
     int maxy, cury;
     int margin = 3;
+    public int maxLines = 150;
+    boolean quote = true;
     UI.Grab sdrag = null;
 
     @RName("log")
@@ -84,12 +87,21 @@ public class Textlog extends Widget {
 
     public void append(String line, Color col) {
         Text rl;
+        if(quote){
+            line = RichText.Parser.quote(line);
+        }
         if (col == null)
-            rl = fnd.render(RichText.Parser.quote(line), sz.x - (margin * 2) - sflarp.sz().x);
+            rl = fnd.render(line, sz.x - (margin * 2) - sflarp.sz().x);
         else
-            rl = fnd.render(RichText.Parser.quote(line), sz.x - (margin * 2) - sflarp.sz().x, TextAttribute.FOREGROUND, col);
+            rl = fnd.render(line, sz.x - (margin * 2) - sflarp.sz().x, TextAttribute.FOREGROUND, col);
         synchronized (lines) {
             lines.add(rl);
+            if((maxLines > 0)&&(lines.size() > maxLines)){
+                Text tl = lines.remove(0);
+                int dy = tl.sz().y;
+                maxy -= dy;
+                cury -= dy;
+            }
         }
         if (cury == maxy)
             cury += rl.sz().y;
@@ -146,5 +158,12 @@ public class Textlog extends Widget {
             return (true);
         }
         return (false);
+    }
+    public void setprog(double a){
+        if(a < 0)
+            a = 0;
+        if(a > 1)
+            a = 1;
+        cury = (int)(a * (maxy - sz.y)) + sz.y;
     }
 }

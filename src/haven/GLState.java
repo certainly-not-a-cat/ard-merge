@@ -26,14 +26,24 @@
 
 package haven;
 
-import haven.glsl.ShaderMacro;
+import static haven.GOut.checkerr;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL3;
-import java.util.*;
 
-import static haven.GOut.checkerr;
+import haven.glsl.ShaderMacro;
 
 public abstract class GLState {
     public abstract void apply(GOut g);
@@ -478,6 +488,7 @@ public abstract class GLState {
         public ShaderMacro.Program prog;
         public boolean pdirty = false, sdirty = false;
         public long time = 0;
+        public boolean usedprog;
 
         /* XXX: Arguably, there should be a way to more fundamentally
          * affect the gl_Position generation code instead of this. */
@@ -589,6 +600,7 @@ public abstract class GLState {
                     }
                 }
             }
+            usedprog = prog != null;
             if(sdirty || (prog == null)) {
                 ShaderMacro.Program np;
                 np = findprog(nproghash, nshaders);
