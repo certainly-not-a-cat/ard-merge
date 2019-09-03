@@ -52,7 +52,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     private final ThreadGroup g;
     public final Thread mt;
     DisplayMode fsmode = null, prefs = null;
-    private static final String TITLE = "Ardennes Hafen Client | Based On Amber Ender and Purus v" + Config.version + "";
+    private static final String TITLE = "Ardennes Hafen Client v" + Config.version;
 
     static {
         try {
@@ -331,7 +331,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
                         setTitle(TITLE);
                     } else {
                         fun = new RemoteUI(sess);
-                        setTitle(TITLE + " \u2013 " + sess.username);
+                        setTitle(sess.username + " \u2014 " + TITLE);
                     }
                     sess = fun.run(p.newui(sess));
                 }
