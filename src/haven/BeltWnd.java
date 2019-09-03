@@ -52,6 +52,8 @@ public class BeltWnd extends MovableWidget {
                     return Optional.of(res.get().layer(Resource.imgc).tex());
                 } catch (Loading e) {
                     return Optional.empty();
+                } catch (Exception exc) {   //NPE happens with dynamic resources like gems
+                    return Optional.empty();
                 }
             } else if(pag != null) {
                 return Optional.of(pag.img.get());
