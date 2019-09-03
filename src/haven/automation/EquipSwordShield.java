@@ -123,6 +123,7 @@ public class EquipSwordShield implements Runnable {
                 if (e == null)//equipory is somehow null, break
                     return;
 
+                /*
                 if (lhand == null) //try to find an empty hand first, otherwise drop it in left hand
                     e.wdgmsg("drop", 6);
                 else if (rhand == null)
@@ -132,6 +133,16 @@ public class EquipSwordShield implements Runnable {
                         e.wdgmsg("drop", 6);
                     else if (!rhand.name.get().contains("Sword") && !rhand.name.get().contains("shield"))
                         e.wdgmsg("drop", 7);
+                */
+                if (rhand == null) //try to find an empty hand first, otherwise drop it in left hand
+                    e.wdgmsg("drop", 7);
+                else if (lhand == null)
+                    e.wdgmsg("drop", 6);
+                else {//resolve what's in both hands to ensure we don't overwrite a sack with another sack
+                    if (!rhand.name.get().contains("Sword") && !rhand.name.get().contains("shield"))
+                        e.wdgmsg("drop", 7);
+                    else if (!lhand.name.get().contains("Sword") && !lhand.name.get().contains("shield"))
+                        e.wdgmsg("drop", 6);
                     try {
                         if (!Utils.waitForOccupiedHand(gui, TIMEOUT, "waitForOccupiedHand2 timed-out"))
                             return;
