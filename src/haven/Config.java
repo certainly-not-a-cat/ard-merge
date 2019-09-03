@@ -796,7 +796,7 @@ public class Config {
             "soapstone",
             "orthoclase",
             "alabaster",
-            "korund"
+            "corund"
     ));
 
     public final static Set<String> mineablesOre = new HashSet<String>(Arrays.asList(
