@@ -1457,6 +1457,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         Thread t = new Thread(new PickForageable(this), "PickForageable");
         t.start();
     }
+    public void traverse(){
+        Thread t = new Thread(new Traverse(this), "Traverse");
+        t.start();
+    }
 
     public void toggleDangerRadius(){
             Config.showminerad = !Config.showminerad;

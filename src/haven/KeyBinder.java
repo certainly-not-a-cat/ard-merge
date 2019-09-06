@@ -99,6 +99,7 @@ public class KeyBinder {
 	add(KeyEvent.VK_U,CTRL,TOGGLE_UI);
 	add(KeyEvent.VK_M,ALT,TOGGLE_STATUSOVERLAY);
 	add(KeyEvent.VK_Q,0,HARVEST_FORAGEABLE);
+	add(KeyEvent.VK_A, SHIFT, ACT_TRAVERSE);
 	add(KeyEvent.VK_Z,CTRL,TOGGLE_PATHFINDING);
 	add(KeyEvent.VK_S,ALT,TOGGLE_SEARCH);
 	add(KeyEvent.VK_O,SHIFT,TOGGLE_OPTIONS);
