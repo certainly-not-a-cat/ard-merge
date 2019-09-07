@@ -54,7 +54,7 @@ public class MenuGrid extends Widget {
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, Text.cfg.font.get("sans"), TextAttribute.SIZE, Text.cfg.tooltipCap); //aa(true)
     public final Map<String, SpecialPagina> specialpag = new HashMap<>();
     public final ObservableCollection<Pagina> paginae = new ObservableCollection<>(new HashSet<>());
-    private static Coord gsz = new Coord(4, 4);
+    private static Coord gsz = new Coord(6, 4);
     public Pagina cur, dragging;
     private Collection<PagButton> curbtns = null;
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];

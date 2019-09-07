@@ -174,8 +174,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             }
         }, new Coord(1, 0)));
 
-        brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
-        menupanel.add(new MainMenu(), 0, 0);
+        // brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
+        // menupanel.add(new MainMenu(), 0, 0);
         portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam") {
             public boolean mousedown(Coord c, int button) {
                 return (true);
