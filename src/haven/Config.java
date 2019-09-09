@@ -261,7 +261,7 @@ public class Config {
     public static int smatSupportsgreen= Utils.getprefi("smatSupportsgreen",255);
     public static int smatSupportsblue = Utils.getprefi("smatSupportsblue",0);
     public static String confid = "ArdClient";
-    public static final boolean isUpdate;
+    // public static final boolean isUpdate;
     private static String username, playername;
     public static boolean showPBot = Utils.getprefb("showPBot",true);
     public static boolean showPBotOld = Utils.getprefb("showPBotOld",true);
@@ -1020,12 +1020,16 @@ public class Config {
             }
         } catch (Exception e) {}*/
         loadBuildVersion();
+        /*
         isUpdate = (!version.equals(newversion)) || !getFile("changelog.txt").exists();
         if (isUpdate) {
          //   Config.version = newversion;
             Utils.setpref("version",newversion);
             Config.version = newversion;
         }
+        */
+
+        /*
         try {
             InputStream in = ErrorHandler.class.getResourceAsStream("/CHANGELOG");
             try {
@@ -1043,6 +1047,7 @@ public class Config {
                 in.close();
             }
         } catch (Exception e) {}
+        */
 
         // populate grid ids map
         BufferedReader reader = null;

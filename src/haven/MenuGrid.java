@@ -60,6 +60,7 @@ public class MenuGrid extends Widget {
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
     private UI.Grab grab;
     private int curoff = 0;
+    private static int cap = (gsz.x * gsz.y) - 2;
     BufferedReader br;
     private boolean recons = true;
     private Map<Character, PagButton> hotmap = new HashMap<>();
@@ -94,8 +95,15 @@ public class MenuGrid extends Widget {
 
         public String sortkey() {
             AButton ai = pag.act();
-            if(ai.ad.length == 0)
+
+            if(ai.ad.length == 0) {
                 return("\0" + name());
+            }
+            
+            if(ai.ad[0].contains("!")) {
+                return("\0\0" + ai.ad[0] + name());
+            }
+
             return(name());
         }
 
@@ -140,10 +148,10 @@ public class MenuGrid extends Widget {
 
     public final PagButton next = new PagButton(new Pagina(this, Resource.local().loadwait("gfx/hud/sc-next").indir())) {
         public void use() {
-            if((curoff + 14) >= curbtns.size())
+            if((curoff + cap) >= curbtns.size())
                 curoff = 0;
             else
-                curoff += 14;
+                curoff += cap;
         }
 
         public BufferedImage rendertt(boolean withpg) {
@@ -153,8 +161,8 @@ public class MenuGrid extends Widget {
 
     public final PagButton bk = new PagButton(new Pagina(this, Resource.local().loadwait("gfx/hud/sc-back").indir())) {
         public void use() {
-            if((curoff - 14) >= 0)
-                curoff -= 14;
+            if((curoff - cap) >= 0)
+                curoff -= cap;
             else {
                 pag.scm.cur = paginafor(pag.scm.cur.act().parent);
                 curoff = 0;
@@ -771,14 +779,7 @@ public class MenuGrid extends Widget {
                     }
             ));
         }
-        addSpecial(new SpecialPagina(this, "paginae::windows::char",
-                Resource.local().load("paginae/windows/char"),
-                (pag) -> {
-                    GameUI gui = gameui();
-                    if(gui != null){
-                       gui.toggleCharWnd();
-                    }}
-        ));
+
         addSpecial(new SpecialPagina(this, "paginae::windows::chat",
                 Resource.local().load("paginae/windows/chat"),
                 (pag) -> {
@@ -787,6 +788,17 @@ public class MenuGrid extends Widget {
                       gui.OpenChat();
                     }}
         ));
+
+        /*
+        addSpecial(new SpecialPagina(this, "paginae::windows::char",
+                Resource.local().load("paginae/windows/char"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                       gui.toggleCharWnd();
+                    }}
+        ));
+
         addSpecial(new SpecialPagina(this, "paginae::windows::equ",
                 Resource.local().load("paginae/windows/equ"),
                 (pag) -> {
@@ -819,6 +831,62 @@ public class MenuGrid extends Widget {
                       gui.toggleSearch();
                     }}
         ));
+        */
+
+
+        addSpecial(new SpecialPagina(this, "paginae::char",
+                Resource.local().load("paginae/mainmenu/char"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                       gui.toggleCharWnd();
+                    }}
+        ));
+
+        addSpecial(new SpecialPagina(this, "paginae::equ",
+                Resource.local().load("paginae/mainmenu/equ"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                      gui.toggleEquipment();
+                    }}
+        ));
+        addSpecial(new SpecialPagina(this, "paginae::inv",
+                Resource.local().load("paginae/mainmenu/inv"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                      gui.toggleInv();
+                    }}
+        ));
+        addSpecial(new SpecialPagina(this, "paginae::kithnkin",
+                Resource.local().load("paginae/mainmenu/kithnkin"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                      gui.toggleKinList();
+                    }}
+        ));
+        addSpecial(new SpecialPagina(this, "paginae::search",
+                Resource.local().load("paginae/mainmenu/search"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                      gui.toggleSearch();
+                    }}
+        ));
+
+        addSpecial(new SpecialPagina(this, "paginae::options",
+                Resource.local().load("paginae/mainmenu/opt"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                      gui.toggleOptions();
+                    }}
+        ));
+        
+
+
         addSpecial(new SpecialPagina(this, "paginae::windows::smap",
                 Resource.local().load("paginae/windows/smap"),
                 (pag) -> {
@@ -835,6 +903,7 @@ public class MenuGrid extends Widget {
                       gui.toggleStudy();
                     }}
         ));
+
 
         addSpecial(new SpecialPagina(this, "paginae::windows::alerted",
                 Resource.local().load("paginae/windows/alerted"),
@@ -1052,8 +1121,8 @@ public class MenuGrid extends Widget {
             this.cur = r.pag;
             curoff = 0;
         }else if(r.pag == bk.pag){
-            if((curoff - 14) >= 0)
-                curoff -= 14;
+            if((curoff - cap) >= 0)
+                curoff -= cap;
             else {
                 this.cur = paginafor(this.cur.act().parent);
                 curoff = 0;

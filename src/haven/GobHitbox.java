@@ -6,7 +6,8 @@ import javax.media.opengl.GL2;
 
 public class GobHitbox extends Sprite {
     public static States.ColState fillclrstate = new States.ColState(DefSettings.HIDDENCOLOR.get());
-    private static final States.ColState bbclrstate = new States.ColState(new Color(255, 255, 255, 255));
+    // private static final States.ColState bbclrstate = new States.ColState(new Color(255, 255, 255, 255));
+    public static States.ColState bbclrstate = new States.ColState(DefSettings.GUIDESCOLOR.get());
     private Coordf a, b, c, d;
     private int mode;
     private States.ColState clrstate;
@@ -45,7 +46,7 @@ public class GobHitbox extends Sprite {
         g.apply();
         BGL gl = g.gl;
         if (mode ==  GL2.GL_LINE_LOOP && !wall) {
-            gl.glLineWidth(2.0F);
+            gl.glLineWidth(1.5F);
             gl.glBegin(mode);
             gl.glVertex3f(a.x, a.y, 1);
             gl.glVertex3f(b.x, b.y, 1);
