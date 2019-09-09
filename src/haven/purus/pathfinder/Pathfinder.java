@@ -255,7 +255,16 @@ public class Pathfinder extends Thread {
 					}
 				}
 			}
-			if(toHere[destTile.x][destTile.y] == null) { // A route does not exist!
+			try {
+				if(toHere[destTile.x][destTile.y] == null) { // A route does not exist!
+					synchronized(gui.map) {
+						gui.map.foundPath = false;
+					}
+					return;
+				}
+			} catch(ArrayIndexOutOfBoundsException oobe)  {
+				gui.error("ArrayIndexOutOfBoundsException: pf terminated");
+				oobe.printStackTrace();
 				synchronized(gui.map) {
 					gui.map.foundPath = false;
 				}
