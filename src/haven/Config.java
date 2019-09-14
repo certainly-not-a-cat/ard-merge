@@ -234,6 +234,7 @@ public class Config {
     public static boolean proximityaggro = Utils.getprefb("proximityaggro", false);
     public static boolean proximityaggropvp = Utils.getprefb("proximityaggropvp", false);
     public static boolean disablemenugrid = Utils.getprefb("disablemenugrid", false);
+    public static boolean lockedmainmenu = Utils.getprefb("lockedmainmenu", true);
     public static boolean splitskills = Utils.getprefb("splitskills", true);
     public static boolean pf = false;
     public static String playerposfile;
@@ -397,7 +398,7 @@ public class Config {
         put("gnomeshat", new CheckListboxItem("Gnomes Hat"));
     }};
 
-    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(71) {{
+    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(70) {{
         put("dandelion", new CheckListboxItem("Dandelion"));
         put("chantrelle", new CheckListboxItem("Chantrelle"));
         put("blueberry", new CheckListboxItem("Blueberry"));
@@ -434,6 +435,7 @@ public class Config {
         put("lingon", new CheckListboxItem("Lingonberries"));
         put("grub", new CheckListboxItem("Grub"));
         put("yellowfoot", new CheckListboxItem("Yellowfoot"));
+        put("coltsfoot", new CheckListboxItem("Coltsfoot"));
         put("chives", new CheckListboxItem("Chives"));
         put("rustroot", new CheckListboxItem("Rustroot"));
         put("boostspeed", new CheckListboxItem("Speed Boost"));
@@ -457,7 +459,6 @@ public class Config {
         put("bat", new CheckListboxItem("Bats"));
         put("stagbeetle", new CheckListboxItem("Stagbeetles"));
         put("monarchbutterfly", new CheckListboxItem("Monarch Butterfly"));
-        put("irrbloss", new CheckListboxItem("Irrlight"));
         put("cavecentipede", new CheckListboxItem("Cave Centipede"));
         put("mole", new CheckListboxItem("Moles"));
         put("lorchel", new CheckListboxItem("Morels"));
@@ -575,7 +576,8 @@ public class Config {
         put("Easter Egg", new CheckListboxItem("Easter Egg"));
     }};
 
-    public final static Map<String, Tex> additonalicons = new HashMap<String, Tex>(24) {{
+    public final static Map<String, Tex> additonalicons = new HashMap<String, Tex>(25) {{
+        put("gfx/terobjs/items/mandrakespirited", Resource.loadtex("gfx/icons/mandrakespirited"));
         put("gfx/terobjs/vehicle/bram", Resource.loadtex("gfx/icons/bram"));
         put("gfx/kritter/toad/toad", Resource.loadtex("gfx/icons/toad"));
         put("gfx/terobjs/vehicle/rowboat", Resource.loadtex("gfx/icons/rowboat"));
@@ -690,6 +692,7 @@ public class Config {
         put("gfx/terobjs/herbs/lingon", "Lingonberries");
         put("gfx/kritter/grub/grub", "Grub");
         put("gfx/terobjs/herbs/yellowfoot", "Yellowfoot");
+        put("gfx/terobjs/herbs/coltsfoot", "Coltsfoot");
         put("gfx/terobjs/herbs/chives", "Chives");
         put("gfx/terobjs/herbs/rustroot", "Rustroot");
         put("gfx/kritter/crab/crab", "Crab");

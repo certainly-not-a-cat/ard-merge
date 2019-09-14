@@ -18,7 +18,31 @@ import java.util.Iterator;
 
 public class PickForageable implements Runnable {
     private GameUI gui;
-    public static final HashSet<String> gates = new HashSet(Arrays.asList("brickbiggate", "brickwallgate", "drystonewallgate", "drystonewallbiggate", "palisadegate", "palisadebiggate", "polegate", "polebiggate"));
+    public static final HashSet<String> gates = new HashSet(Arrays.asList(
+        "brickbiggate",
+        "brickwallgate",
+        "drystonewallbiggate",
+        "drystonewallgate",
+        "palisadebiggate",
+        "palisadegate",
+        "polebiggate",
+        "polegate"
+    ));
+    public static final HashSet<String> excludes = new HashSet(Arrays.asList(
+        "boostspeed",
+        "bram",
+        "cart",
+        "dugout",
+        "fishingnet",
+        "knarr",
+        "lobsterpot",
+        "mare",
+        "rowboat",
+        "stallion",
+        "wagon",
+        "wball",
+        "wheelbarrow"
+    ));
     public PickForageable(GameUI gui) {
         this.gui = gui;
     }
@@ -30,19 +54,18 @@ public class PickForageable implements Runnable {
             if (gui.map.player() == null)
                 return;//player is null, possibly taking a road, don't bother trying to do all of the below.
             for (Gob gob : gui.map.glob.oc) {
-                /* unnecesarry check here?
-                if (gob.type == Type.TAMEDANIMAL)
-                    continue; //don't evaluate tamed horses
-                    */
                 Resource res = null;
                 boolean gate = false;
                 boolean cart = false;
+                boolean ignore = true;
                 try {
                     res = gob.getres();
                 } catch (Loading l) {
                 }
                 if (res != null) {
                     CheckListboxItem itm = Config.icons.get(res.basename());
+                    if ( !excludes.contains( res.basename() ) )
+                        ignore = false;
                     Boolean hidden = Boolean.FALSE;
                     if(!Config.disablegatekeybind)
                         gate = gates.contains(res.basename());
@@ -68,7 +91,8 @@ public class PickForageable implements Runnable {
                     }
                     */
 
-                    if (hidden == null && res.name.startsWith("gfx/terobjs/herbs") || (hidden == Boolean.FALSE && !res.name.startsWith("gfx/terobjs/vehicle") && !cart) || gate || cart) {
+                    // if (hidden == null && res.name.startsWith("gfx/terobjs/herbs") || (hidden == Boolean.FALSE && !res.name.startsWith("gfx/terobjs/vehicle") && !cart) || gate || cart) {
+                    if (hidden == null && res.name.startsWith("gfx/terobjs/herbs") || (hidden == Boolean.FALSE && !ignore)  || gate || cart) {
                         double distFromPlayer = gob.rc.dist(gui.map.player().rc);
                         if (distFromPlayer <= 40 * 11 && (herb == null || distFromPlayer < herb.rc.dist(gui.map.player().rc)))
                             herb = gob;
