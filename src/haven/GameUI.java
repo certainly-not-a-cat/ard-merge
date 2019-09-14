@@ -170,12 +170,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         });
         menupanel = add(new Hidepanel("menu", new Indir<Coord>() {
             public Coord get() {
-                return (new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - 79, GameUI.this.sz.y - menupanel.sz.y)));
+                return (new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y/* - menupanel.sz.y*/ + 1, GameUI.this.sz.y - menupanel.sz.y)));
             }
         }, new Coord(1, 0)));
 
         // brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
-        // menupanel.add(new MainMenu(), 0, 0);
+        if (Config.lockedmainmenu)
+            menupanel.add(new MainMenu(), 0, 0);
         portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam") {
             public boolean mousedown(Coord c, int button) {
                 return (true);
@@ -1226,14 +1227,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             wdg.c.y = sz.y - wdg.sz.y;
     }
 
-    private static final Tex menubg = Resource.loadtex("gfx/hud/rbtn-bg");
+    private static final Tex menubg = Resource.loadtex("gfx/hud/mainmenu/rbtn-bg");
 
     public static class MenuButton2 extends IButton {
         private final Action action;
         private final String tip;
 
         MenuButton2(String base, String tooltip, Action action) {
-            super("gfx/hud/" + base, "", "-d", "-h");
+            super("gfx/hud/mainmenu/" + base, "", "-d", "-h");
             this.action = action;
             this.tip = tooltip;
            // KeyBinder.add(code, mods, action);
@@ -1261,12 +1262,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public class MainMenu extends Widget {
         public MainMenu() {
             super(menubg.sz());
-            add(new MenuButton2("rbtn-inv", "Inventory", TOGGLE_INVENTORY) , 0, 0);
-            add(new MenuButton2("rbtn-equ", "Equipment", TOGGLE_EQUIPMENT),0, 0);
-            add(new MenuButton2("rbtn-chr", "Character Sheet", TOGGLE_CHARACTER), 0, 0);
-            add(new MenuButton2("rbtn-bud", "Kith & Kin", TOGGLE_KIN_LIST), 0, 0);
-            add(new MenuButton2("rbtn-opt", "Options", TOGGLE_OPTIONS), 0, 0);
-            add(new MenuButton2("rbtn-dwn", "Menu Search",TOGGLE_SEARCH),0,0);
+            add(new MenuButton2("rbtn-src", "Menu Search",TOGGLE_SEARCH),1,1);
+            add(new MenuButton2("rbtn-inv", "Inventory", TOGGLE_INVENTORY),34,1);
+            add(new MenuButton2("rbtn-equ", "Equipment", TOGGLE_EQUIPMENT),67,1);
+            add(new MenuButton2("rbtn-chr", "Character Sheet", TOGGLE_CHARACTER),100,1);
+            add(new MenuButton2("rbtn-bud", "Kith & Kin", TOGGLE_KIN_LIST),133,1);
+            add(new MenuButton2("rbtn-opt", "Options", TOGGLE_OPTIONS),166,1);
         }
 
         public void draw(GOut g) {

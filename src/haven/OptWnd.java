@@ -2062,6 +2062,19 @@ public class OptWnd extends Window {
                 a = val;
             }
         });
+
+        appender.add(new CheckBox("Always show Main Menu (Requires relog)") {
+            {
+                a = Config.lockedmainmenu;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("lockedmainmenu", val);
+                Config.lockedmainmenu = val;
+                a = val;
+            }
+        });
+        
         appender.add(new CheckBox("Display skills split into base+bonus") {
             {
                 a = Config.splitskills;
