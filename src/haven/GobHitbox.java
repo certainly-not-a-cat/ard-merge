@@ -46,7 +46,7 @@ public class GobHitbox extends Sprite {
         g.apply();
         BGL gl = g.gl;
         if (mode ==  GL2.GL_LINE_LOOP && !wall) {
-            gl.glLineWidth(1.5F);
+            gl.glLineWidth(1.35F);
             gl.glBegin(mode);
             gl.glVertex3f(a.x, a.y, 1);
             gl.glVertex3f(b.x, b.y, 1);
