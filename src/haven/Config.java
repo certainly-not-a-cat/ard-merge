@@ -398,7 +398,8 @@ public class Config {
         put("gnomeshat", new CheckListboxItem("Gnomes Hat"));
     }};
 
-    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(70) {{
+    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(72) {{
+    	put("mandrakespirited", new CheckListboxItem("Spirited Mandrake"));
         put("dandelion", new CheckListboxItem("Dandelion"));
         put("chantrelle", new CheckListboxItem("Chantrelle"));
         put("blueberry", new CheckListboxItem("Blueberry"));
@@ -416,6 +417,7 @@ public class Config {
         put("rowboat", new CheckListboxItem("Rowboat"));
         put("dugout", new CheckListboxItem("Dugout"));
         put("knarr", new CheckListboxItem("Knarr"));
+        put("snekkja", new CheckListboxItem("Snekkja"));
         put("arrow", new CheckListboxItem("Arrow"));
         put("boarspear", new CheckListboxItem("Boar Spear"));
         put("cavemoth", new CheckListboxItem("Cave Moth"));
@@ -576,13 +578,14 @@ public class Config {
         put("Easter Egg", new CheckListboxItem("Easter Egg"));
     }};
 
-    public final static Map<String, Tex> additonalicons = new HashMap<String, Tex>(25) {{
+    public final static Map<String, Tex> additonalicons = new HashMap<String, Tex>(26) {{
         put("gfx/terobjs/items/mandrakespirited", Resource.loadtex("gfx/icons/mandrakespirited"));
         put("gfx/terobjs/vehicle/bram", Resource.loadtex("gfx/icons/bram"));
         put("gfx/kritter/toad/toad", Resource.loadtex("gfx/icons/toad"));
         put("gfx/terobjs/vehicle/rowboat", Resource.loadtex("gfx/icons/rowboat"));
         put("gfx/terobjs/vehicle/dugout",Resource.loadtex("gfx/icons/dugout"));
         put("gfx/terobjs/vehicle/knarr", Resource.loadtex("gfx/icons/knarr"));
+        put("gfx/terobjs/vehicle/snekkja", Resource.loadtex("gfx/icons/snekkja"));
         put("gfx/kritter/chicken/chicken", Resource.loadtex("gfx/icons/deadhen"));
         put("gfx/kritter/chicken/rooster", Resource.loadtex("gfx/icons/deadrooster"));
         put("gfx/kritter/rabbit/rabbit", Resource.loadtex("gfx/icons/deadrabbit"));

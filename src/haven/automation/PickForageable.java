@@ -35,6 +35,7 @@ public class PickForageable implements Runnable {
         "dugout",
         "fishingnet",
         "knarr",
+        "snekkja",
         "lobsterpot",
         "mare",
         "rowboat",
@@ -91,7 +92,6 @@ public class PickForageable implements Runnable {
                     }
                     */
 
-                    // if (hidden == null && res.name.startsWith("gfx/terobjs/herbs") || (hidden == Boolean.FALSE && !res.name.startsWith("gfx/terobjs/vehicle") && !cart) || gate || cart) {
                     if (hidden == null && res.name.startsWith("gfx/terobjs/herbs") || (hidden == Boolean.FALSE && !ignore)  || gate || cart) {
                         double distFromPlayer = gob.rc.dist(gui.map.player().rc);
                         if (distFromPlayer <= 40 * 11 && (herb == null || distFromPlayer < herb.rc.dist(gui.map.player().rc)))
@@ -108,15 +108,6 @@ public class PickForageable implements Runnable {
             CheckListboxItem itm = Config.autoclusters.get(herb.getres().name);
             if(itm != null && itm.selected)
                 gui.map.startMusselsPicker(herb);
-
-           /* if ((herb.getres().basename().contains("mussel") || herb.getres().basename().contains("oyster")) && Config.autopickmussels)
-                gui.map.startMusselsPicker(herb);
-            if (herb.getres().basename().contains("clay-gray") && Config.autopickclay)
-                gui.map.startMusselsPicker(herb);
-            if (herb.getres().basename().contains("goosebarnacle") && Config.autopickbarnacles)
-                gui.map.startMusselsPicker(herb);
-            if (herb.getres().basename().contains("cattail") && Config.autopickcattails)
-            gui.map.startMusselsPicker(herb);*/
         }
     }
 }
