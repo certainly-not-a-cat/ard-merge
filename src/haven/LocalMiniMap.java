@@ -41,8 +41,10 @@ import static haven.OCache.posres;
 
 public class LocalMiniMap extends Widget {
     private static final Tex resize = Resource.loadtex("gfx/hud/wndmap/lg/resize");
-    private static final Tex gridblue = Resource.loadtex("gfx/hud/mmap/gridblue");
-    private static final Tex gridred = Resource.loadtex("gfx/hud/mmap/gridred");
+    // private static final Tex gridblue = Resource.loadtex("gfx/hud/mmap/gridblue");
+    // private static final Tex gridred = Resource.loadtex("gfx/hud/mmap/gridred");
+    private static final Tex gridwhite = Resource.loadtex("gfx/hud/mmap/gridwhite");
+    private static final Tex gridblack = Resource.loadtex("gfx/hud/mmap/gridblack");
     private String biome;
    // public Tex biometex;
     public final MapView mv;
@@ -60,6 +62,9 @@ public class LocalMiniMap extends Widget {
 
 	private float zoom = 1f; //zoom multiplier
 	private float iconZoom = 1f; //zoom multiplier for minimap icons
+    private static float[] zArray = {.5f, .75f, 1f, 2f, 3f};
+    private static float[] ziArray = {.8f, .9f, 1f, 1f, 1f};
+    private int zIndex = 2;
 
     private final Map<Coord, Tex> maptiles = new LinkedHashMap<Coord, Tex>(100, 0.75f, false) {
         @Override
@@ -126,25 +131,54 @@ public class LocalMiniMap extends Widget {
         MCache m = ui.sess.glob.map;
         BufferedImage buf = TexI.mkbuf(sz);
         Coord c = new Coord();
+
         for (c.y = 0; c.y < sz.y; c.y++) {
             for (c.x = 0; c.x < sz.x; c.x++) {
                 int t = m.gettile(ul.add(c));
-
                 BufferedImage tex = tileimg(t, texes);
-                int rgb = 0;
+                int rgb = 0xFF000000;
                 if (tex != null)
+                {
                     rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-                            Utils.floormod(c.y + ul.y, tex.getHeight()));
-                buf.setRGB(c.x, c.y, rgb);
-
-                try {
-                    if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
+                    Utils.floormod(c.y + ul.y, tex.getHeight()));
+                    int mixrgb = tex.getRGB(10, 20);
+    
+                    //color post-processing
+                    Color tempColor = new Color(rgb, true);
+                    float[] HSBColor = new float[3];
+                    Color.RGBtoHSB(tempColor.getRed(), tempColor.getGreen(), tempColor.getBlue(), HSBColor);
+    
+                    Color mixtempColor = new Color(mixrgb, true);
+                    float[] mixHSBColor = new float[3];
+                    Color.RGBtoHSB(mixtempColor.getRed(), mixtempColor.getGreen(), mixtempColor.getBlue(), mixHSBColor);
+                    HSBColor[0] = (HSBColor[0] + mixHSBColor[0] * 2) / 3;
+                    HSBColor[1] = (HSBColor[1] * 2 + mixHSBColor[1]) / 3;
+                    HSBColor[2] = (HSBColor[2] + mixHSBColor[2]) / 2;
+                            
+                    try {
+                        if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
                             (m.gettile(ul.add(c).add(1, 0)) > t) ||
                             (m.gettile(ul.add(c).add(0, -1)) > t) ||
-                            (m.gettile(ul.add(c).add(0, 1)) > t))
-                        buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
-                } catch (Exception e) {
+                            (m.gettile(ul.add(c).add(0, 1)) > t)) {
+                                HSBColor[1] *= 0.88f;
+                                HSBColor[2] = HSBColor[2] * 1.08f - 0.10f;
+                            }
+                        else
+                        if ((m.gettile(ul.add(c).add(-1, -1)) > t) ||
+                            (m.gettile(ul.add(c).add(-1, 1)) > t) ||
+                            (m.gettile(ul.add(c).add(1, -1)) > t) ||
+                            (m.gettile(ul.add(c).add(1, 1)) > t)) {
+                                HSBColor[1] *= 0.94f;
+                                HSBColor[2] = HSBColor[2] * 1.04f - 0.05f;
+                            }  
+                    } catch (Exception e) { }
+                    
+                    for (int i = 0; i < HSBColor.length; i++) {
+                        HSBColor[i] = Math.max(0f, Math.min(HSBColor[i], 1f));
+                    }
+                    rgb = Color.HSBtoRGB(HSBColor[0], HSBColor[1], HSBColor[2]);
                 }
+                buf.setRGB(c.x, c.y, rgb);
             }
         }
 
@@ -158,7 +192,7 @@ public class LocalMiniMap extends Widget {
                             for (int y = c.y - 1; y <= c.y + 1; y++) {
                                 for (int x = c.x - 1; x <= c.x + 1; x++) {
                                     Color cc = new Color(buf.getRGB(x, y));
-                                    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 1 : 0.1).getRGB());
+                                    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 0.7f : 0).getRGB());
                                 }
                             }
                         }
@@ -240,7 +274,7 @@ public class LocalMiniMap extends Widget {
                         int stage = 0;
                         if(gob.getattr(ResDrawable.class) != null)
                             stage = gob.getattr(ResDrawable.class).sdt.peekrbuf(0);
-                        if(stage == 10 || stage == 14)
+                        if(stage == 10 || stage == 14 || stage == 16)
                         g.image(dooricn, p2c(gob.rc).sub(dooricn.sz().div(2)).add(delta));
                     }
 
@@ -518,7 +552,8 @@ public class LocalMiniMap extends Widget {
                             Coord mtc = new Coord(mtcx, mtcy);
                             g.image(mt, mtc, ts);
                             if (Config.mapshowgrid)
-                                g.image(gridred, mtc, ts);
+                                // g.image(gridred, mtc, ts);
+                                g.image(gridwhite, mtc, ts);
                         }
                     }
                 }
@@ -529,7 +564,8 @@ public class LocalMiniMap extends Widget {
             if (Config.mapshowviewdist) {
                 Gob player = mv.player();
                 if (player != null)
-                    g.image(gridblue, p2c(player.rc).add(delta).sub((int)(44 * zoom), (int)(44 * zoom)), gridblue.dim.mul(zoom));
+                    // g.image(gridblue, p2c(player.rc).add(delta).sub((int)(44 * zoom), (int)(44 * zoom)), gridblue.dim.mul(zoom));
+                    g.image(gridblack, p2c(player.rc).add(delta).sub((int)(64 * zoom), (int)(64 * zoom)), gridblack.dim.mul(zoom));
             }
         }
         drawicons(g);
@@ -643,12 +679,13 @@ public class LocalMiniMap extends Widget {
     }
 
     public boolean mousewheel(Coord c, int amount) {
-    	if (amount > 0 && zoom > 1)
-    		zoom = Math.round(zoom * 100 - 20) / 100f;
-    	else if (amount < 0 && zoom < 3)
-    		zoom = Math.round(zoom * 100 + 20) / 100f;
-
-    	iconZoom = Math.round((zoom - 1) * 100 / 2) / 100f + 1;
+        if (amount == 0) {
+            return false;
+        } else {
+            zIndex = Math.max(0, Math.min(zIndex - amount, zArray.length-1));
+        }
+    	zoom = zArray[zIndex];
+        iconZoom = ziArray[zIndex];
     	return true;
     }
 }
