@@ -21,7 +21,7 @@ public class ChatWnd extends ResizableWnd {
     @Override
     protected void added() {
 	super.added();
-	System.out.println(c);
+	// System.out.println(c);
 	chat.resize(asz);
     }
 

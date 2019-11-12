@@ -165,6 +165,7 @@ public class Config {
     public static boolean showdframestatus = Utils.getprefb("showdframestatus", true);
     public static boolean showcoopstatus = Utils.getprefb("showcoopstatus", true);
     public static boolean hideallicons = Utils.getprefb("hideallicons", false);
+    public static boolean stopmapupdate = Utils.getprefb("stopmapupdate", false);
     public static boolean showhutchstatus = Utils.getprefb("showhutchstatus", true);
     public static boolean showrackstatus = Utils.getprefb("showrackstatus", true);
     public static boolean showcupboardstatus = Utils.getprefb("showcupboardstatus", true);

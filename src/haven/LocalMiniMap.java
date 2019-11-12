@@ -140,43 +140,29 @@ public class LocalMiniMap extends Widget {
                 if (tex != null)
                 {
                     rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-                    Utils.floormod(c.y + ul.y, tex.getHeight()));
+                        Utils.floormod(c.y + ul.y, tex.getHeight()));
                     int mixrgb = tex.getRGB(10, 20);
     
                     //color post-processing
-                    Color tempColor = new Color(rgb, true);
-                    float[] HSBColor = new float[3];
-                    Color.RGBtoHSB(tempColor.getRed(), tempColor.getGreen(), tempColor.getBlue(), HSBColor);
-    
                     Color mixtempColor = new Color(mixrgb, true);
-                    float[] mixHSBColor = new float[3];
-                    Color.RGBtoHSB(mixtempColor.getRed(), mixtempColor.getGreen(), mixtempColor.getBlue(), mixHSBColor);
-                    HSBColor[0] = (HSBColor[0] + mixHSBColor[0] * 2) / 3;
-                    HSBColor[1] = (HSBColor[1] * 2 + mixHSBColor[1]) / 3;
-                    HSBColor[2] = (HSBColor[2] + mixHSBColor[2]) / 2;
-                            
+                    Color tempColor = new Color(rgb, true);
+
+                    tempColor = Utils.blendcol(tempColor, mixtempColor, 0.7f);
                     try {
                         if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
                             (m.gettile(ul.add(c).add(1, 0)) > t) ||
                             (m.gettile(ul.add(c).add(0, -1)) > t) ||
                             (m.gettile(ul.add(c).add(0, 1)) > t)) {
-                                HSBColor[1] *= 0.88f;
-                                HSBColor[2] = HSBColor[2] * 1.08f - 0.10f;
+                                tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.25f);
                             }
-                        else
-                        if ((m.gettile(ul.add(c).add(-1, -1)) > t) ||
+                        else if ((m.gettile(ul.add(c).add(-1, -1)) > t) ||
                             (m.gettile(ul.add(c).add(-1, 1)) > t) ||
                             (m.gettile(ul.add(c).add(1, -1)) > t) ||
                             (m.gettile(ul.add(c).add(1, 1)) > t)) {
-                                HSBColor[1] *= 0.94f;
-                                HSBColor[2] = HSBColor[2] * 1.04f - 0.05f;
+                                tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.12f);
                             }  
                     } catch (Exception e) { }
-                    
-                    for (int i = 0; i < HSBColor.length; i++) {
-                        HSBColor[i] = Math.max(0f, Math.min(HSBColor[i], 1f));
-                    }
-                    rgb = Color.HSBtoRGB(HSBColor[0], HSBColor[1], HSBColor[2]);
+                    rgb = tempColor.getRGB();
                 }
                 buf.setRGB(c.x, c.y, rgb);
             }
@@ -192,7 +178,7 @@ public class LocalMiniMap extends Widget {
                             for (int y = c.y - 1; y <= c.y + 1; y++) {
                                 for (int x = c.x - 1; x <= c.x + 1; x++) {
                                     Color cc = new Color(buf.getRGB(x, y));
-                                    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 0.7f : 0).getRGB());
+                                    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 0.85f : 0.2f).getRGB());
                                 }
                             }
                         }

@@ -185,16 +185,25 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         cal = umpanel.add(new Cal(), new Coord(0, 10));
         if(Config.hidecalendar)
             cal.hide();
-        add(new Widget(new Coord(400, 40)) {
+        add(new Widget(new Coord(360, 40)) {
             @Override
             public void draw(GOut g) {
                 if (Config.showservertime) {
-                    Tex time = ui.sess.glob.servertimetex;
-                    if (time != null)
-                        g.image(time, new Coord(300 / 2 - time.sz().x / 2, 0));
+                    Tex mtime = ui.sess.glob.mservertimetex;
+                    Tex ltime = ui.sess.glob.lservertimetex;
+                    Tex rtime = ui.sess.glob.rservertimetex;
+                    Tex btime = ui.sess.glob.bservertimetex;
+                    if (mtime != null)
+                        g.image(mtime, new Coord(360 / 2 - mtime.sz().x / 2, 0));
+                    if (ltime != null)
+                        g.image(ltime, new Coord(360 / 2 - mtime.sz().x / 2 - 12 - ltime.sz().x, 0));
+                    if (rtime != null)
+                        g.image(rtime, new Coord(360 / 2 + mtime.sz().x / 2 + 12, 0));
+                    if (btime != null)
+                        g.image(btime, new Coord(360 / 2 - btime.sz().x / 2, 16));
                 }
             }
-        }, new Coord(HavenPanel.w / 2 - 300 / 2, umpanel.sz.y));
+        }, new Coord(HavenPanel.w / 2 - 360 / 2, umpanel.sz.y));
 
         opts = add(new OptWnd());
         opts.hide();

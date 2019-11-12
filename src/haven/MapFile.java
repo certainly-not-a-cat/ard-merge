@@ -731,6 +731,7 @@ public class MapFile {
     }
 
     public void update(MCache map, Collection<MCache.Grid> grids) {
+        if (Config.stopmapupdate) return;
         lock.writeLock().lock();
         try {
             long mseg = -1;

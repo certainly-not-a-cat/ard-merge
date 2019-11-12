@@ -1403,9 +1403,9 @@ public class OptWnd extends Window {
                 Config.mapdrawparty = val;
                 a = val;
             }
-        },420,380);
+        },10,370);
 
-        map.add(new CheckBox("Show names above questgivers.") {
+        map.add(new CheckBox("Show names above questgivers") {
             {
                 a = Config.mapdrawquests;
             }
@@ -1415,8 +1415,8 @@ public class OptWnd extends Window {
                 Config.mapdrawquests = val;
                 a = val;
             }
-        },0,370);
-        map.add(new CheckBox("Show names above marker flags.") {
+        },10,330);
+        map.add(new CheckBox("Show names above marker flags") {
             {
                 a = Config.mapdrawflags;
             }
@@ -1426,7 +1426,18 @@ public class OptWnd extends Window {
                 Config.mapdrawflags = val;
                 a = val;
             }
-        },0,390);
+        },10,350);       
+        map.add(new CheckBox("Disable map updating") {
+            {
+                a = Config.stopmapupdate;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("stopmapupdate", val);
+                Config.stopmapupdate = val;
+                a = val;
+            }
+        },425,350);
 
         map.add(new PButton(200, "Back", 27, main), new Coord(210, 380));
         map.pack();
@@ -3269,7 +3280,7 @@ public class OptWnd extends Window {
     public void setMapSettings() {
         final String charname = gameui().chrid;
 
-        CheckListbox boulderlist = new CheckListbox(140, 18) {
+        CheckListbox boulderlist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3280,7 +3291,7 @@ public class OptWnd extends Window {
             boulderlist.items.add(itm);
         map.add(boulderlist, new Coord(10, 15));
 
-        CheckListbox bushlist = new CheckListbox(140, 18) {
+        CheckListbox bushlist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3291,7 +3302,7 @@ public class OptWnd extends Window {
             bushlist.items.add(itm);
         map.add(bushlist, new Coord(165, 15));
 
-        CheckListbox treelist = new CheckListbox(140, 18) {
+        CheckListbox treelist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3302,7 +3313,7 @@ public class OptWnd extends Window {
             treelist.items.add(itm);
         map.add(treelist, new Coord(320, 15));
 
-        CheckListbox iconslist = new CheckListbox(140, 18) {
+        CheckListbox iconslist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3323,7 +3334,7 @@ public class OptWnd extends Window {
                 Config.showroadendpoint = val;
                 a = val;
             }
-        },165,340);
+        },240,330);
 
         map.add(new CheckBox("Show road Midpoints") {
             {
@@ -3335,9 +3346,9 @@ public class OptWnd extends Window {
                 Config.showroadmidpoint = val;
                 a = val;
             }
-        },320,340);
+        },240,350);
 
-        map.add(new CheckBox("Hide ALL (yes ALL) Icons") {
+        map.add(new CheckBox("Hide ALL Icons") {
             {
                 a = Config.hideallicons;
             }
@@ -3347,12 +3358,13 @@ public class OptWnd extends Window {
                 Config.hideallicons = val;
                 a = val;
             }
-        },475,340);
+        },425,330);
 
-        map.add(new PButton(100,"Clear Boulders", 27,clearboulders), new Coord(15,345));
-        map.add(new PButton(100,"Clear Bushes", 27,clearbushes), new Coord(170,355));
-        map.add(new PButton(100,"Clear Trees", 27,cleartrees), new Coord(325,355));
-        map.add(new PButton(100,"Clear Hides", 27,clearhides), new Coord(480,355));
+
+        map.add(new PButton(140,"Clear Boulders", 27,clearboulders), new Coord(10,302));
+        map.add(new PButton(140,"Clear Bushes", 27,clearbushes), new Coord(165,302));
+        map.add(new PButton(140,"Clear Trees", 27,cleartrees), new Coord(320,302));
+        map.add(new PButton(140,"Clear Icons", 27,clearhides), new Coord(475,302));
 
 
         map.pack();
