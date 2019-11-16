@@ -2,3 +2,6 @@ build/*
 config.ini
 *.log
 screenshots/*
+*.json
+dynamic.sqlite
+*.bkp
