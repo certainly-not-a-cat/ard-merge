@@ -492,23 +492,23 @@ public class OptWnd extends Window {
     }
 
     private void initMain(boolean gopts) {
-        main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
-        main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-        main.add(new PButton(200, "Display settings", 'd', display), new Coord(0, 60));
-        main.add(new PButton(200, "Map settings", 'm', map), new Coord(0, 90));
-        main.add(new PButton(200, "General settings", 'g', general), new Coord(210, 0));
-        main.add(new PButton(200, "Combat settings", 'c', combat), new Coord(210, 30));
-        main.add(new PButton(200, "Control settings", 'k', control), new Coord(210, 60));
-        main.add(new PButton(200, "UI settings", 'u', uis), new Coord(210, 90));
-        main.add(new PButton(200, "Quality settings", 'q', quality), new Coord(420, 0));
-        main.add(new PButton(200, "Menu settings", 'f', flowermenus), new Coord(420, 30));
-        main.add(new PButton(200, "Sound alarms", 's', soundalarms), new Coord(420, 60));
-        main.add(new PButton(200, "Hide settings", 'h', hidesettings), new Coord(420, 90));
-        main.add(new PButton(200, "Study Desk Options", 'o', studydesksettings), new Coord(0, 120));
-        main.add(new PButton(200, "Keybind Options", 'p', keybindsettings), new Coord(210, 120));
-        main.add(new PButton(200,"Chat Settings",'c', chatsettings), new Coord(420,120));
-        main.add(new PButton(200,"Theme Settings",'t', uip), new Coord(0,150));
-        main.add(new PButton(200, "Autodrop Settings", 's', autodropsettings), new Coord(420, 150));
+        main.add(new PButton(200, "Video", 'v', video), new Coord(0, 0));
+        main.add(new PButton(200, "Audio", 'a', audio), new Coord(0, 30));
+        main.add(new PButton(200, "Display", 'd', display), new Coord(0, 60));
+        main.add(new PButton(200, "Map", 'm', map), new Coord(0, 90));
+        main.add(new PButton(200, "General", 'g', general), new Coord(210, 0));
+        main.add(new PButton(200, "Combat", 'c', combat), new Coord(210, 30));
+        main.add(new PButton(200, "Control", 'k', control), new Coord(210, 60));
+        main.add(new PButton(200, "UI", 'u', uis), new Coord(210, 90));
+        main.add(new PButton(200, "Quality", 'q', quality), new Coord(420, 0));
+        main.add(new PButton(200, "Pop-up Menu", 'f', flowermenus), new Coord(420, 30));
+        main.add(new PButton(200, "Sound Alarms", 's', soundalarms), new Coord(420, 60));
+        main.add(new PButton(200, "Hidden Objects", 'h', hidesettings), new Coord(420, 90));
+        main.add(new PButton(200, "Study Desk", 'o', studydesksettings), new Coord(0, 120));
+        main.add(new PButton(200, "Keybinds", 'p', keybindsettings), new Coord(210, 120));
+        main.add(new PButton(200, "Chat",'c', chatsettings), new Coord(420,120));
+        main.add(new PButton(200, "Theme",'t', uip), new Coord(0,150));
+        main.add(new PButton(200, "Autodrop", 's', autodropsettings), new Coord(420, 150));
         if (gopts) {
             main.add(new Button(200, "Disconnect Discord") {
                 public void click() {
@@ -551,6 +551,7 @@ public class OptWnd extends Window {
                     }
                 }
             }, new Coord(210, 210));
+            /*
             main.add(new Button(200, "Join ArdClient Discord") {
                 public void click() {
                     try {
@@ -561,11 +562,14 @@ public class OptWnd extends Window {
                     }
                 }
             }, new Coord(210, 240));
+            */
+            /*
             main.add(new Button(200, "Show Client Changelog") {
                 public void click() {
                    showChangeLog();
                 }
             }, new Coord(210, 270));
+            */
             main.add(new Button(200, "Switch character") {
                 public void click() {
                     GameUI gui = gameui();
@@ -1399,9 +1403,9 @@ public class OptWnd extends Window {
                 Config.mapdrawparty = val;
                 a = val;
             }
-        },420,380);
+        },10,370);
 
-        map.add(new CheckBox("Show names above questgivers.") {
+        map.add(new CheckBox("Show names above questgivers") {
             {
                 a = Config.mapdrawquests;
             }
@@ -1411,8 +1415,8 @@ public class OptWnd extends Window {
                 Config.mapdrawquests = val;
                 a = val;
             }
-        },0,370);
-        map.add(new CheckBox("Show names above marker flags.") {
+        },10,330);
+        map.add(new CheckBox("Show names above marker flags") {
             {
                 a = Config.mapdrawflags;
             }
@@ -1422,7 +1426,18 @@ public class OptWnd extends Window {
                 Config.mapdrawflags = val;
                 a = val;
             }
-        },0,390);
+        },10,350);       
+        map.add(new CheckBox("Disable map updating") {
+            {
+                a = Config.stopmapupdate;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("stopmapupdate", val);
+                Config.stopmapupdate = val;
+                a = val;
+            }
+        },425,350);
 
         map.add(new PButton(200, "Back", 27, main), new Coord(210, 380));
         map.pack();
@@ -2058,6 +2073,19 @@ public class OptWnd extends Window {
                 a = val;
             }
         });
+
+        appender.add(new CheckBox("Always show Main Menu (Requires relog)") {
+            {
+                a = Config.lockedmainmenu;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("lockedmainmenu", val);
+                Config.lockedmainmenu = val;
+                a = val;
+            }
+        });
+        
         appender.add(new CheckBox("Display skills split into base+bonus") {
             {
                 a = Config.splitskills;
@@ -2837,6 +2865,18 @@ public class OptWnd extends Window {
                         ui.sess.glob.oc.changeAllGobs();
                     }
     }));
+        appender.add(ColorPreWithLabel("Guidelines color: ", GUIDESCOLOR, val ->{
+            GobHitbox.bbclrstate = new States.ColState(val);
+            TileOutline.color = new States.ColState(
+                val.getRed(), 
+                val.getGreen(),
+                val.getBlue(),
+                (int)(val.getAlpha() * 0.5) 
+            );
+            if(ui.sess != null) {
+                ui.sess.glob.oc.changeAllGobs();
+            }
+        }));
         appender.add(new Button(200, "New Hidden System", false) {
             public void click() {
                 GameUI gui = gameui();
@@ -3240,7 +3280,7 @@ public class OptWnd extends Window {
     public void setMapSettings() {
         final String charname = gameui().chrid;
 
-        CheckListbox boulderlist = new CheckListbox(140, 18) {
+        CheckListbox boulderlist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3251,7 +3291,7 @@ public class OptWnd extends Window {
             boulderlist.items.add(itm);
         map.add(boulderlist, new Coord(10, 15));
 
-        CheckListbox bushlist = new CheckListbox(140, 18) {
+        CheckListbox bushlist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3262,7 +3302,7 @@ public class OptWnd extends Window {
             bushlist.items.add(itm);
         map.add(bushlist, new Coord(165, 15));
 
-        CheckListbox treelist = new CheckListbox(140, 18) {
+        CheckListbox treelist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3273,7 +3313,7 @@ public class OptWnd extends Window {
             treelist.items.add(itm);
         map.add(treelist, new Coord(320, 15));
 
-        CheckListbox iconslist = new CheckListbox(140, 18) {
+        CheckListbox iconslist = new CheckListbox(140, 16) {
             @Override
             protected void itemclick(CheckListboxItem itm, int button) {
                 super.itemclick(itm, button);
@@ -3294,7 +3334,7 @@ public class OptWnd extends Window {
                 Config.showroadendpoint = val;
                 a = val;
             }
-        },165,340);
+        },240,330);
 
         map.add(new CheckBox("Show road Midpoints") {
             {
@@ -3306,9 +3346,9 @@ public class OptWnd extends Window {
                 Config.showroadmidpoint = val;
                 a = val;
             }
-        },320,340);
+        },240,350);
 
-        map.add(new CheckBox("Hide ALL (yes ALL) Icons") {
+        map.add(new CheckBox("Hide ALL Icons") {
             {
                 a = Config.hideallicons;
             }
@@ -3318,12 +3358,13 @@ public class OptWnd extends Window {
                 Config.hideallicons = val;
                 a = val;
             }
-        },475,340);
+        },425,330);
 
-        map.add(new PButton(100,"Clear Boulders", 27,clearboulders), new Coord(15,345));
-        map.add(new PButton(100,"Clear Bushes", 27,clearbushes), new Coord(170,355));
-        map.add(new PButton(100,"Clear Trees", 27,cleartrees), new Coord(325,355));
-        map.add(new PButton(100,"Clear Hides", 27,clearhides), new Coord(480,355));
+
+        map.add(new PButton(140,"Clear Boulders", 27,clearboulders), new Coord(10,302));
+        map.add(new PButton(140,"Clear Bushes", 27,clearbushes), new Coord(165,302));
+        map.add(new PButton(140,"Clear Trees", 27,cleartrees), new Coord(320,302));
+        map.add(new PButton(140,"Clear Icons", 27,clearhides), new Coord(475,302));
 
 
         map.pack();
@@ -3343,6 +3384,7 @@ public class OptWnd extends Window {
         chpanel(main);
         super.show();
     }
+    /*
     private void showChangeLog() {
         Window log = gameui().ui.root.add(new Window(new Coord(50, 50), "Changelog"), new Coord(100, 50));
         log.justclose = true;
@@ -3369,6 +3411,7 @@ public class OptWnd extends Window {
         }
         txt.setprog(0);
     }
+    */
 
     private Dropbox<String> makeAlarmDropdownUnknown() {
         final List<String> alarms = Config.alarms.values().stream().map(x -> x.toString()).collect(Collectors.toList());
