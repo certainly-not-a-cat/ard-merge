@@ -62,8 +62,8 @@ public class LocalMiniMap extends Widget {
 
 	private float zoom = 1f; //zoom multiplier
 	private float iconZoom = 1f; //zoom multiplier for minimap icons
-    private static float[] zArray = {.5f, .75f, 1f, 2f, 3f};
-    private static float[] ziArray = {.8f, .9f, 1f, 1f, 1f};
+    private static float[] zArray = {.5f, .75f, 1f, 2f, 3f, 4f};
+    private static float[] ziArray = {.8f, .9f, 1f, 1f, 1f, 1f};
     private int zIndex = 2;
 
     private final Map<Coord, Tex> maptiles = new LinkedHashMap<Coord, Tex>(100, 0.75f, false) {
@@ -141,13 +141,13 @@ public class LocalMiniMap extends Widget {
                 {
                     rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
                         Utils.floormod(c.y + ul.y, tex.getHeight()));
-                    int mixrgb = tex.getRGB(10, 20);
+                    int mixrgb = tex.getRGB(20, 45);
     
                     //color post-processing
                     Color mixtempColor = new Color(mixrgb, true);
                     Color tempColor = new Color(rgb, true);
 
-                    tempColor = Utils.blendcol(tempColor, mixtempColor, 0.7f);
+                    tempColor = Utils.blendcol(tempColor, mixtempColor, 0.75f);
                     try {
                         if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
                             (m.gettile(ul.add(c).add(1, 0)) > t) ||
