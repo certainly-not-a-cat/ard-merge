@@ -76,8 +76,8 @@ public class BeltWnd extends MovableWidget {
             });
             //always show our hotkey key
             final Coord tkeyc = sz.sub(tkey.sz());
-            g.chcolor(new java.awt.Color(128, 128, 128, 128));
-            g.frect(tkeyc, new Coord(sz.x, tkeyc.y), sz, new Coord(tkeyc.x, sz.y));
+            // g.chcolor(new java.awt.Color(128, 128, 128, 128));
+            // g.frect(tkeyc, new Coord(sz.x, tkeyc.y), sz, new Coord(tkeyc.x, sz.y));
             g.chcolor();
             g.image(tkey, tkeyc);
         }

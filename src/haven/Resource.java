@@ -135,7 +135,11 @@ public class Resource implements Serializable {
 			ret = (ret * 31) + ver;
 			return (ret);
 		}
-	public String name() { return name; }
+		public String name() { return name; }
+
+		public String toString() {
+		    return(String.format("#<res-name %s v%d>", name, ver));
+		}
 	}
 
 	public static class Spec extends Named implements Serializable {

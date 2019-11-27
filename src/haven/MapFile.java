@@ -394,18 +394,100 @@ public class MapFile {
         }
     }
 
-    public static class Grid {
-        public final long id, mtime;
+    // public static class Grid {
+        // public final long id, mtime;
+    public static class DataGrid {
         public final TileInfo[] tilesets;
         public final byte[] tiles;
-        private int useq = -1;
+        // private int useq = -1;
+        public final long mtime;
 
-        public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
-            this.id = id;
+        // public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
+        public DataGrid(TileInfo[] tilesets, byte[] tiles, long mtime) {
+            // this.id = id;
             this.tilesets = tilesets;
             this.tiles = tiles;
             this.mtime = mtime;
         }
+
+        public int gettile(Coord c) {
+                    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+                }
+
+                private BufferedImage tiletex(int t, BufferedImage[] texes, boolean[] cached) {
+                    if(!cached[t]) {
+                        Resource r = null;
+                        try {
+                            r = loadsaved(Resource.remote(), tilesets[t].res);
+                        } catch(Loading l) {
+                            throw(l);
+                        } catch(Exception e) {
+                            Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
+                        }
+                        if(r != null) {
+                            Resource.Image ir = r.layer(Resource.imgc);
+                            if(ir != null) {
+                                texes[t] = ir.img;
+                            }
+                        }
+                        cached[t] = true;
+                    }
+                    return(texes[t]);
+                }
+
+                public BufferedImage render(Coord off) {
+                    BufferedImage[] texes = new BufferedImage[256];
+                    boolean[] cached = new boolean[256];
+                    WritableRaster buf = PUtils.imgraster(cmaps);
+                    Coord c = new Coord();
+                    for(c.y = 0; c.y < cmaps.y; c.y++) {
+                        for(c.x = 0; c.x < cmaps.x; c.x++) {
+                            int t = gettile(c);
+                            BufferedImage tex = tiletex(t, texes, cached);
+                            int rgb = 0;
+                            if(tex != null)
+                                rgb = tex.getRGB(Utils.floormod(c.x + off.x, tex.getWidth()),
+                                        Utils.floormod(c.y + off.y, tex.getHeight()));
+                            buf.setSample(c.x, c.y, 0, (rgb & 0x00ff0000) >>> 16);
+                            buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
+                            buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
+                            buf.setSample(c.x, c.y, 3, (rgb & 0xff000000) >>> 24);
+                        }
+                    }
+                    for(c.y = 1; c.y < cmaps.y - 1; c.y++) {
+                        for(c.x = 1; c.x < cmaps.x - 1; c.x++) {
+                            int p = tilesets[gettile(c)].prio;
+                            if((tilesets[gettile(c.add(-1, 0))].prio > p) ||
+                                    (tilesets[gettile(c.add( 1, 0))].prio > p) ||
+                                    (tilesets[gettile(c.add(0, -1))].prio > p) ||
+                                    (tilesets[gettile(c.add(0,  1))].prio > p))
+                            {
+                                buf.setSample(c.x, c.y, 0, 0);
+                                buf.setSample(c.x, c.y, 1, 0);
+                                buf.setSample(c.x, c.y, 2, 0);
+                                buf.setSample(c.x, c.y, 3, 255);
+                            }
+                        }
+                    }
+                    return(PUtils.rasterimg(buf));
+                }
+
+                public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
+                public static final DataGrid nogrid;
+                static {
+                    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new byte[cmaps.x * cmaps.y], 0);
+                }
+            }
+
+            public static class Grid extends DataGrid {
+                public final long id;
+                private boolean[] norepl;
+                private int useq = -1;
+
+                public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
+                    super(tilesets, tiles, mtime);
+                    this.id = id;
+                }
 
         public static Grid from(MCache map, MCache.Grid cg) {
             int oseq = cg.seq;
@@ -413,12 +495,20 @@ public class MapFile {
             Resource.Spec[] sets = new Resource.Spec[256];
             int[] tmap = new int[256];
             int[] rmap = new int[256];
+            boolean[] norepl = new boolean[256];
             Arrays.fill(tmap, -1);
             for (int tn : cg.tiles) {
                 if (tmap[tn] == -1) {
                     tmap[tn] = nt;
                     rmap[nt] = tn;
                     sets[nt] = map.nsets[tn];
+                    try {
+                        for(String tag : map.tileset(tn).tags) {
+                            if(tag.equals("norepl"))
+                                norepl[nt] = true;
+                        }
+                    } catch(Loading l) {
+                    }
                     nt++;
                 }
             }
@@ -434,8 +524,52 @@ public class MapFile {
             for (int i = 0; i < cg.tiles.length; i++)
                 tiles[i] = (byte) (tmap[cg.tiles[i]]);
             Grid g = new Grid(cg.id, infos, tiles, System.currentTimeMillis());
+            g.norepl = norepl;
             g.useq = oseq;
             return (g);
+        }
+
+        public Grid mergeprev(Grid prev) {
+            if((norepl == null) || (prev.tiles.length != this.tiles.length))
+                return(this);
+            boolean[] used = new boolean[prev.tilesets.length];
+            boolean any = false;
+            int[] tmap = new int[prev.tilesets.length];
+            for(int i = 0; i < tmap.length; i++)
+                tmap[i] = -1;
+            for(int i = 0; i < this.tiles.length; i++) {
+                if(norepl[this.tiles[i]]) {
+                    used[prev.tiles[i]] = true;
+                    any = true;
+                }
+            }
+            if(!any)
+                return(this);
+            TileInfo[] ntilesets = this.tilesets;
+            for(int i = 0; i < used.length; i++) {
+                if(used[i] && (tmap[i] < 0)) {
+                    dedup: {
+                        for(int o = 0; o < this.tilesets.length; o++) {
+                            if(this.tilesets[o].res.name.equals(prev.tilesets[i].res.name)) {
+                                tmap[i] = o;
+                                break dedup;
+                            }
+                        }
+                        tmap[i] = ntilesets.length;
+                        ntilesets = Utils.extend(ntilesets, prev.tilesets[i]);
+                    }
+                }
+            }
+            byte[] ntiles = new byte[this.tiles.length];
+            for(int i = 0; i < this.tiles.length; i++) {
+                if(norepl[this.tiles[i]])
+                    ntiles[i] = (byte)tmap[prev.tiles[i]];
+                else
+                    ntiles[i] = this.tiles[i];
+            }
+            Grid g = new Grid(this.id, ntilesets, ntiles, this.mtime);
+            g.useq = this.useq;
+            return(g);
         }
 
         public void save(Message fp) {
@@ -518,9 +652,11 @@ public class MapFile {
             return (texes[t]);
         }
 
+        /*
         private int gettile(Coord c) {
             return (tiles[c.x + (c.y * cmaps.x)] & 0xff);
         }
+        */
 
         public BufferedImage render(Coord off) {
             BufferedImage[] texes = new BufferedImage[256];
@@ -731,7 +867,6 @@ public class MapFile {
     }
 
     public void update(MCache map, Collection<MCache.Grid> grids) {
-        if (Config.stopmapupdate) return;
         lock.writeLock().lock();
         try {
             long mseg = -1;

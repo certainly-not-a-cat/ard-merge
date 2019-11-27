@@ -1426,7 +1426,8 @@ public class OptWnd extends Window {
                 Config.mapdrawflags = val;
                 a = val;
             }
-        },10,350);       
+        },10,350);
+        /*       
         map.add(new CheckBox("Disable map updating") {
             {
                 a = Config.stopmapupdate;
@@ -1438,6 +1439,7 @@ public class OptWnd extends Window {
                 a = val;
             }
         },425,350);
+        */
 
         map.add(new PButton(200, "Back", 27, main), new Coord(210, 380));
         map.pack();

@@ -2,6 +2,10 @@ build/*
 screenshots/*
 *.log
 *.bat
-*.sqlite
 *.json
 *.ini
+*.bkp
+chatlog.txt
+dynamic.sqlite
+chatlog.txt
+res/gfx/*

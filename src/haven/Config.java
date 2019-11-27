@@ -165,7 +165,7 @@ public class Config {
     public static boolean showdframestatus = Utils.getprefb("showdframestatus", true);
     public static boolean showcoopstatus = Utils.getprefb("showcoopstatus", true);
     public static boolean hideallicons = Utils.getprefb("hideallicons", false);
-    public static boolean stopmapupdate = Utils.getprefb("stopmapupdate", false);
+    // public static boolean stopmapupdate = Utils.getprefb("stopmapupdate", false);
     public static boolean showhutchstatus = Utils.getprefb("showhutchstatus", true);
     public static boolean showrackstatus = Utils.getprefb("showrackstatus", true);
     public static boolean showcupboardstatus = Utils.getprefb("showcupboardstatus", true);
@@ -399,8 +399,9 @@ public class Config {
         put("gnomeshat", new CheckListboxItem("Gnomes Hat"));
     }};
 
-    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(72) {{
-    	put("mandrakespirited", new CheckListboxItem("Spirited Mandrake"));
+    public final static HashMap<String, CheckListboxItem> icons = new HashMap<String, CheckListboxItem>(73) {{
+    	put("sandflea", new CheckListboxItem("Sand Flea"));
+        put("mandrakespirited", new CheckListboxItem("Spirited Mandrake"));
         put("dandelion", new CheckListboxItem("Dandelion"));
         put("chantrelle", new CheckListboxItem("Chantrelle"));
         put("blueberry", new CheckListboxItem("Blueberry"));
