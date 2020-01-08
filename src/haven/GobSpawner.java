@@ -90,7 +90,10 @@ public class GobSpawner extends Window {
     public void close() {
         ui.destroy(this);
     }
-    public final static HashMap<String, String> posemap = new HashMap<String, String>(3) {{
+    public final static HashMap<String, String> posemap = new HashMap<String, String>(15) {{
+        put("Orca Idle","gfx/kritter/orca/idle");
+        put("Orca Knocked","gfx/kritter/orca/knock");
+
         put("Whale Knocked","gfx/kritter/spermwhale/knock");
         put("Whale Dead","gfx/kritter/spermwhale/waterdead");
         put("Whale Swimming","gfx/kritter/spermwhale/swimming");
@@ -116,6 +119,7 @@ public class GobSpawner extends Window {
         put("gfx/kritter/chicken/rooster", "Chicken Rooster");
         put("gfx/kritter/chicken/chick", "Chicken Chick");
         put("gfx/kritter/toad/toad", "Toad");
+        put("gfx/kritter/orca/orca", "Orca");
         put("gfx/kritter/frog/frog", "Frog");
         put("gfx/kritter/mallard/mallard", "Duck");
         put("gfx/kritter/hedgehog/hedgehog", "Hedgehog");
@@ -157,5 +161,7 @@ public class GobSpawner extends Window {
         put("Mammoth Knocked","Mammoth Knocked");
         put("Mammoth Fight","Mammoth Fight");
         put("Mammoth Idle","Mammoth Idle");
+        put("Orca Idle","Orca Idle");
+        put("Orca Knocked","Orca Knocked");
     }};
 }

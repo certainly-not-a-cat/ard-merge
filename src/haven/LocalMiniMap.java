@@ -585,13 +585,15 @@ public class LocalMiniMap extends Widget {
                     continue;
                 }
 
-                final Coord front = new Coord(8, 0).rotate(angle).add(ptc);
-                final Coord right = new Coord(-5, 5).rotate(angle).add(ptc);
-                final Coord left = new Coord(-5, -5).rotate(angle).add(ptc);
-                final Coord notch = new Coord(-2, 0).rotate(angle).add(ptc);
-                g.chcolor(m.col);
+                final Coord weirdShift = new Coord(1, 1);
+                final Coord front = new Coord(10, 0).rotate(angle).add(ptc).add(weirdShift);
+                final Coord right = new Coord(-2, 5).rotate(angle).add(ptc).add(weirdShift);
+                final Coord left = new Coord(-2, -5).rotate(angle).add(ptc).add(weirdShift);
+                final Coord notch = new Coord(0, 0).rotate(angle).add(ptc).add(weirdShift);
+
+                g.chcolor(Utils.blendcol(m.col, Color.WHITE, 0.25f));
                 g.poly(front, right, notch, left);
-                g.chcolor(Color.BLACK);
+                g.chcolor(Utils.blendcol(m.col, Color.BLACK, 0.5f));
                 g.polyline(1, front, right, notch, left);
                 g.chcolor();
             }
