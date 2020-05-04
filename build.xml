@@ -253,7 +253,7 @@ jackson-core.jar graal-sdk.jar graaljs.jar tregex.jar truffle-api.jar" />
         <exec executable="git" outputproperty="gitrev" failifexecutionfails="false">
             <arg line="rev-parse HEAD" />
         </exec>
-        <java jar="update/hafen-updater.jar" fork="true">
+        <java jar="hafen-updater.jar" fork="true">
             <arg value="hash"/>
             <arg value="update/"/>
             <arg value="${gitrev}"/>
