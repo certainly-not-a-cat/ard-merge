@@ -468,9 +468,13 @@ public abstract class ItemInfo {
                         f = ttres.getcode(InfoFactory.class, true);
                 }
 
-                ItemInfo inf = f.build(owner, raw, a);
-                if (inf != null)
-                    ret.add(inf);
+                try {
+                    ItemInfo inf = f.build(owner, raw, a);
+                    if (inf != null)
+                        ret.add(inf);
+                } catch(Exception e){
+                    System.out.print(e.getMessage());
+                }
             } else if (o instanceof String) {
                 ret.add(new AdHoc(owner, (String) o));
             } else {
