@@ -38,6 +38,7 @@ import java.util.*;
 import static haven.Utils.getprop;
 
 public class Config {
+    public static String revVersion = "1.72.4";
     public static final File HOMEDIR = new File("").getAbsoluteFile();
     public static boolean dumpcode = getprop("haven.dumpcode", "off").equals("on");
     public static final boolean iswindows = System.getProperty("os.name").startsWith("Windows");
