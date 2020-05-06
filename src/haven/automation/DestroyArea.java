@@ -107,7 +107,7 @@ public class DestroyArea extends Window implements GobSelectCallback {
                 remaining --;
                     lblc3.settext(remaining+"");
                 }
-                runbtn.click();
+                stopbtn.click();
             }catch(NullPointerException | ConcurrentModificationException ip){}
         }
     }

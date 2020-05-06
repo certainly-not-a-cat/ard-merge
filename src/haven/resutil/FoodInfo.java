@@ -42,7 +42,7 @@ import static haven.PUtils.*;
 import static haven.QualityList.SingleType.*;
 
 public class FoodInfo extends ItemInfo.Tip {
-    public final double end, glut;
+    public final double end, glut, cons;
     public final Event[] evs;
     public final Effect[] efs;
     public final int[] types;
@@ -50,10 +50,11 @@ public class FoodInfo extends ItemInfo.Tip {
     private final CharacterInfo.Constipation constipation;
 	private final static DecimalFormat basefepfmt = new DecimalFormat("0.##");
 
-    public FoodInfo(Owner owner, double end, double glut, Event[] evs, Effect[] efs, int[] types) {
+	public FoodInfo(Owner owner, double end, double glut, double cons, Event[] evs, Effect[] efs, int[] types) {
 	super(owner);
 	this.end = end;
 	this.glut = glut;
+	this.cons = cons;
 	this.evs = evs;
 	this.efs = efs;
 	this.types = types;
@@ -67,6 +68,10 @@ public class FoodInfo extends ItemInfo.Tip {
 	} catch (NullPointerException | OwnerContext.NoContext ignore) {}
 	this.constipation = constipation;
     }
+
+  public FoodInfo(Owner owner, double end, double glut, Event[] evs, Effect[] efs, int[] types) {
+   	this(owner, end, glut, 0, evs, efs, types);
+  }
 
 
     public static class Event {

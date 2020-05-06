@@ -165,7 +165,8 @@ public class FlowerMenu extends Widget {
                         }catch(Exception e){e.printStackTrace();}
                         choose(p);
                         try {
-                            if (p.name.contains("Giddy") && Config.horseautorun) {
+                            // if (p.name.contains("Giddy") && Config.horseautorun) {
+                            if (p.name.contains("Giddy")) {
                                     horsemounter = new Thread(new FlowerMenu.horsemounter());
                                     horsemounter.start();
                             }
@@ -195,8 +196,9 @@ public class FlowerMenu extends Widget {
                }
                 Speedget speedwdg = gui.speedget.get();
                 if(speedwdg != null)
-                    speedwdg.set(2);
-            } catch (Exception e) { }
+                    // speedwdg.set(2);
+                    speedwdg.set(Config.defspeedhorse);
+            } catch (Exception e) {}
         }
     }
 

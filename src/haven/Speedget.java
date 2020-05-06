@@ -68,8 +68,11 @@ public class Speedget extends Widget {
     }
 
     public void draw(GOut g) {
-        if (Config.runonlogin && !runonloginset && max > 1) {
-            set(2);
+        // if (Config.runonlogin && !runonloginset && max > 1) {
+        if (!runonloginset) {
+            try {
+                set(Config.defspeedchar);
+            } catch (Exception e) { }
             runonloginset = true;
         }
 

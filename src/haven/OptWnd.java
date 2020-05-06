@@ -1393,6 +1393,18 @@ public class OptWnd extends Window {
         map.add(new Label("Show trees:"), new Coord(320, 0));
         map.add(new Label("Hide icons:"), new Coord(475, 0));
 
+        map.add(new CheckBox("Good old minimap") {
+            {
+                a = Config.oldminimap;
+            }
+
+            public void set(boolean val) {
+                Utils.setprefb("oldminimap", val);
+                Config.oldminimap = val;
+                a = val;
+            }
+        },10,390);
+
         map.add(new CheckBox("Draw party members/names") {
             {
                 a = Config.mapdrawparty;
@@ -1627,6 +1639,7 @@ public class OptWnd extends Window {
             }
         });
         appender.addRow(new Label("Attribute Increase per mouse scroll"), makeStatGainDropdown());
+        /*
         appender.add(new CheckBox("Run on login") {
             {
                 a = Config.runonlogin;
@@ -1638,6 +1651,7 @@ public class OptWnd extends Window {
                 a = val;
             }
         });
+        */
         appender.add(new CheckBox("Show server time") {
             {
                 a = Config.showservertime;
@@ -1660,6 +1674,7 @@ public class OptWnd extends Window {
                 a = val;
             }
         });
+        /*
         appender.add(new CheckBox("Auto switch to speed 3 on horse") {
             {
                 a = Config.horseautorun;
@@ -1671,6 +1686,34 @@ public class OptWnd extends Window {
                 a = val;
             }
         });
+        */
+
+        appender.addRow(new Label("Char's speed on login"),
+                new HSlider(50, 0, 3, 2) {
+                    protected void attach(UI ui) {
+                        super.attach(ui);
+                        val = Config.defspeedchar;
+                    }
+
+                    public void changed() {
+                        Config.defspeedchar = val;
+                        Utils.setprefi("defspeedchar", val);
+                    }
+                });
+
+        appender.addRow(new Label("Horse speed on mount"),
+                new HSlider(50, 0, 3, 2) {
+                    protected void attach(UI ui) {
+                        super.attach(ui);
+                        val = Config.defspeedhorse;
+                    }
+
+                    public void changed() {
+                        Config.defspeedhorse = val;
+                        Utils.setprefi("defspeedhorse", val);
+                    }
+                });
+
         appender.add(new CheckBox("Enable tracking on login") {
             {
                 a = Config.enabletracking;

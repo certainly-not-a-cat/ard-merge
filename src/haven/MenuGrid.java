@@ -513,6 +513,20 @@ public class MenuGrid extends Widget {
                         }
                     }}
         ));
+        addSpecial(new SpecialPagina(this, "paginae::amber::destroyarea",
+                Resource.local().load("paginae/amber/DestroyArea"),
+                (pag) -> {
+                    GameUI gui = gameui();
+                    if(gui != null){
+                        if (gui.getwnd("Destroy Gobs in Area") == null) {
+                            DestroyArea sw = new DestroyArea(gui);
+                            gui.add(sw, new Coord(gui.sz.x / 2 - sw.sz.x / 2, gui.sz.y / 2 - sw.sz.y / 2 - 200));
+                            synchronized (GobSelectCallback.class) {
+                                gui.map.registerGobSelect(sw);
+                            }
+                        }
+                    }}
+        ));
         addSpecial(new SpecialPagina(this, "paginae::amber::clover",
                 Resource.local().load("paginae/amber/clover"),
                 (pag) -> {

@@ -41,8 +41,8 @@ import static haven.OCache.posres;
 
 public class LocalMiniMap extends Widget {
     private static final Tex resize = Resource.loadtex("gfx/hud/wndmap/lg/resize");
-    // private static final Tex gridblue = Resource.loadtex("gfx/hud/mmap/gridblue");
-    // private static final Tex gridred = Resource.loadtex("gfx/hud/mmap/gridred");
+    private static final Tex gridblue = Resource.loadtex("gfx/hud/mmap/gridblue");
+    private static final Tex gridred = Resource.loadtex("gfx/hud/mmap/gridred");
     private static final Tex gridwhite = Resource.loadtex("gfx/hud/mmap/gridwhite");
     private static final Tex gridblack = Resource.loadtex("gfx/hud/mmap/gridblack");
     private String biome;
@@ -141,28 +141,37 @@ public class LocalMiniMap extends Widget {
                 {
                     rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
                         Utils.floormod(c.y + ul.y, tex.getHeight()));
-                    int mixrgb = tex.getRGB(20, 45);
     
-                    //color post-processing
-                    Color mixtempColor = new Color(mixrgb, true);
-                    Color tempColor = new Color(rgb, true);
-
-                    tempColor = Utils.blendcol(tempColor, mixtempColor, 0.75f);
-                    try {
-                        if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
-                            (m.gettile(ul.add(c).add(1, 0)) > t) ||
-                            (m.gettile(ul.add(c).add(0, -1)) > t) ||
-                            (m.gettile(ul.add(c).add(0, 1)) > t)) {
-                                tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.25f);
-                            }
-                        else if ((m.gettile(ul.add(c).add(-1, -1)) > t) ||
-                            (m.gettile(ul.add(c).add(-1, 1)) > t) ||
-                            (m.gettile(ul.add(c).add(1, -1)) > t) ||
-                            (m.gettile(ul.add(c).add(1, 1)) > t)) {
-                                tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.12f);
-                            }  
-                    } catch (Exception e) { }
-                    rgb = tempColor.getRGB();
+                    if (Config.oldminimap) {
+                        try {
+                            if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
+                                    (m.gettile(ul.add(c).add(1, 0)) > t) ||
+                                    (m.gettile(ul.add(c).add(0, -1)) > t) ||
+                                    (m.gettile(ul.add(c).add(0, 1)) > t))
+                                rgb = Color.BLACK.getRGB();
+                        } catch (Exception e) {
+                        }
+                    } else { //modded minimap
+                        int mixrgb = tex.getRGB(20, 45);
+                        Color mixtempColor = new Color(mixrgb, true);
+                        Color tempColor = new Color(rgb, true);
+                        tempColor = Utils.blendcol(tempColor, mixtempColor, 0.75f);
+                        try {
+                            if ((m.gettile(ul.add(c).add(-1, 0)) > t) ||
+                                (m.gettile(ul.add(c).add(1, 0)) > t) ||
+                                (m.gettile(ul.add(c).add(0, -1)) > t) ||
+                                (m.gettile(ul.add(c).add(0, 1)) > t)) {
+                                    tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.25f);
+                                }
+                            else if ((m.gettile(ul.add(c).add(-1, -1)) > t) ||
+                                (m.gettile(ul.add(c).add(-1, 1)) > t) ||
+                                (m.gettile(ul.add(c).add(1, -1)) > t) ||
+                                (m.gettile(ul.add(c).add(1, 1)) > t)) {
+                                    tempColor = Utils.blendcol(tempColor, Color.BLACK, 0.12f);
+                                }  
+                        } catch (Exception e) { }
+                        rgb = tempColor.getRGB();
+                    }
                 }
                 buf.setRGB(c.x, c.y, rgb);
             }
@@ -178,7 +187,11 @@ public class LocalMiniMap extends Widget {
                             for (int y = c.y - 1; y <= c.y + 1; y++) {
                                 for (int x = c.x - 1; x <= c.x + 1; x++) {
                                     Color cc = new Color(buf.getRGB(x, y));
-                                    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 0.85f : 0.2f).getRGB());
+                                    if (Config.oldminimap) {
+                                        buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 1 : 0.1).getRGB());
+                                    } else {
+                                        buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y)) ? 0.8f : 0.125f).getRGB());
+                                    }
                                 }
                             }
                         }
@@ -187,7 +200,6 @@ public class LocalMiniMap extends Widget {
                 }
             }
         }
-
         return new TexI(buf);
     }
 
@@ -585,16 +597,27 @@ public class LocalMiniMap extends Widget {
                     continue;
                 }
 
-                final Coord weirdShift = new Coord(1, 1);
-                final Coord front = new Coord(10, 0).rotate(angle).add(ptc).add(weirdShift);
-                final Coord right = new Coord(-2, 5).rotate(angle).add(ptc).add(weirdShift);
-                final Coord left = new Coord(-2, -5).rotate(angle).add(ptc).add(weirdShift);
-                final Coord notch = new Coord(0, 0).rotate(angle).add(ptc).add(weirdShift);
+                if (Config.oldminimap) {
+                    final Coord front = new Coord(8, 0).rotate(angle).add(ptc);
+                    final Coord right = new Coord(-5, 5).rotate(angle).add(ptc);
+                    final Coord left = new Coord(-5, -5).rotate(angle).add(ptc);
+                    final Coord notch = new Coord(-2, 0).rotate(angle).add(ptc);
+                    g.chcolor(m.col);
+                    g.poly(front, right, notch, left);
+                    g.chcolor(Color.BLACK);
+                    g.polyline(1, front, right, notch, left);
+                } else {
+                    final Coord weirdShift = new Coord(1, 1);
+                    final Coord front = new Coord(10, 0).rotate(angle).add(ptc).add(weirdShift);
+                    final Coord right = new Coord(-2, 5).rotate(angle).add(ptc).add(weirdShift);
+                    final Coord left = new Coord(-2, -5).rotate(angle).add(ptc).add(weirdShift);
+                    final Coord notch = new Coord(0, 0).rotate(angle).add(ptc).add(weirdShift);
 
-                g.chcolor(Utils.blendcol(m.col, Color.WHITE, 0.25f));
-                g.poly(front, right, notch, left);
-                g.chcolor(Utils.blendcol(m.col, Color.BLACK, 0.5f));
-                g.polyline(1, front, right, notch, left);
+                    g.chcolor(Utils.blendcol(m.col, Color.WHITE, 0.1f));
+                    g.poly(front, right, notch, left);
+                    g.chcolor(Utils.blendcol(m.col, Color.BLACK, 0.75f));
+                    g.polyline(1, front, right, notch, left);
+                }
                 g.chcolor();
             }
         }
